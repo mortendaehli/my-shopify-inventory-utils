@@ -1,0 +1,3 @@
+ShopifyAPI
+python-dotenv
+openpyxl
