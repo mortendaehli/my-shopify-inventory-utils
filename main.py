@@ -77,9 +77,10 @@ def main():
             variant.save()
             product.save()
         else:
-            print(f"Deleting - Not matched with POS: {product.title} - sku: {sku}")
-            shopify.Variant.delete(variant.id)
-            shopify.Product.delete(product.id)
+            print(f"Not matched with POS: {product.title} - sku: {sku}")
+            # print(f"Deleting - Not matched with POS: {product.title} - sku: {sku}")
+            # shopify.Variant.delete(variant.id)
+            # shopify.Product.delete(product.id)
 
     for _, df_product in df_inventory.iterrows():
         if df_product.sku not in skus:
