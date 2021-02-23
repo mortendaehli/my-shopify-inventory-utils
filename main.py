@@ -2,6 +2,7 @@ import os
 
 import pandas as pd
 import shopify
+import pathlib
 from dotenv import load_dotenv
 
 
@@ -27,8 +28,9 @@ def main():
 
     shop_url = f"https://{key}:{pwd}@{name}.myshopify.com/admin"
     shopify.ShopifyResource.set_site(value=shop_url)
+    input_file = pathlib.Path().absolute() / 'data' / 'inventory.xlsx'
 
-    df_inventory = pd.read_excel(os.path.join('.', 'data', 'inventory.xlsx'), engine='openpyxl')
+    df_inventory = pd.read_excel(io=input_file, engine='openpyxl')
 
     df_inventory.rename(columns={
         'Varenummer': 'sku',
@@ -59,6 +61,8 @@ def main():
 
     products = get_all_resources(shopify.Product)
 
+    location = shopify.Location.find_first()
+
     skus = []
     # Updating existing products
     for product in products:
@@ -71,9 +75,9 @@ def main():
             product.title = df_product['title']
             product.vendor = df_product['vendor']
             product.product_type = df_product['product_type']
-            product.inventory_quantity = df_product['inventory_quantity']
             variant.price = df_product['price']
             variant.option1 = "Default Title"
+            shopify.InventoryLevel.set(location.id, variant.inventory_item_id, int(df_product['inventory_quantity']))
             variant.save()
             product.save()
         else:
@@ -102,12 +106,14 @@ def main():
                     "price": df_product['price'],
                     # "product_id": new_product.id,
                     "requires_shipping": True,
-                    "inventory_quantity": df_product['inventory_quantity'],
-                    "inventory_policy": "deny",
+                    "inventory_quantity": int(df_product['inventory_quantity']),
+                    "inventory_policy": "continue",
                     "inventory_management": "shopify",
                     "fulfillment_service": "manual"
                 }
             )
+
+            shopify.InventoryLevel.set(location.id, new_variant.inventory_item_id, int(df_product['inventory_quantity']))
 
             new_product.variants = [new_variant]
             new_product.save()
