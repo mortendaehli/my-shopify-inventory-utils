@@ -1,8 +1,8 @@
 import os
+import pathlib
 
 import pandas as pd
 import shopify
-import pathlib
 from dotenv import load_dotenv
 
 
@@ -18,6 +18,10 @@ def get_all_resources(resource_type, **kwargs):
     return resources
 
 
+def get_number_from_string(x):
+    return x.__repr__().replace(',', '.').replace(r'\xa0', '').replace("'", '')
+
+
 def main():
     # env_path = Path('.env')
     # load_dotenv(dotenv_path=env_path)
@@ -31,36 +35,56 @@ def main():
     input_file = pathlib.Path().absolute() / 'data' / 'inventory.xlsx'
 
     df_inventory = pd.read_excel(io=input_file, engine='openpyxl')
+    df_inventory.dropna(subset=['id'], axis=0, inplace=True)
 
-    df_inventory.rename(columns={
-        'Varenummer': 'sku',
-        'varetekst': 'title',
-        'Disponibelt': 'inventory_quantity',
-        'Webgr 1 navn': 'product_type',
-        'synlig på nett': 'active',
-        'Utpris inkl mva': 'price'
-    }, inplace=True)
-
-    df_inventory = df_inventory.loc[:, ['sku', 'title', 'inventory_quantity', 'product_type', 'active', 'price']]
-    df_inventory = df_inventory.loc[df_inventory['product_type'].map(lambda x: x in ['Symaskiner', 'Symaskintilbehør']), :]
-    df_inventory = df_inventory.loc[df_inventory['active'].map(lambda x: x is True)]
+    df_inventory.columns = [
+        'sku',
+        'title',
+        'pos_id',
+        'active',
+        'recommended_product',
+        'inventory_quantity',
+        'product_type',
+        'product_subtype1',
+        'product_subtype2',
+        'price',
+        'price_discounted',
+        'discount_start',
+        'discount_end',
+        'hide_when_empty',
+        'lead_time'
+    ]
 
     df_inventory.loc[:, 'sku'] = df_inventory.loc[:, 'sku'].map(lambda x: str(x))
     df_inventory.loc[:, 'title'] = df_inventory.loc[:, 'title'].astype(str)
-    df_inventory.loc[:, 'inventory_quantity'] = df_inventory.loc[:, 'inventory_quantity'].astype(str)
+    df_inventory.loc[:, 'pos_id'] = df_inventory.loc[:, 'pos_id'].map(lambda x: str(x))
+    df_inventory.loc[:, 'active'] = df_inventory.loc[:, 'active'].astype(bool)
+    df_inventory.loc[:, 'recommended_product'] = df_inventory.loc[:, 'recommended_product'].astype(str)
+    df_inventory.loc[:, 'inventory_quantity'] = df_inventory.loc[:, 'inventory_quantity'].map(lambda x: int(get_number_from_string(x)))
     df_inventory.loc[:, 'product_type'] = df_inventory.loc[:, 'product_type'].astype(str)
-    df_inventory.loc[:, 'active'] = df_inventory.loc[:, 'active'].astype(str)
-    df_inventory.loc[:, 'vendor'] = None
-    df_inventory.loc[:, 'price'] = \
-        df_inventory['price'].map(lambda x: x.__repr__().replace(',', '.').replace(r'\xa0', '').replace("'", '')).astype(float)
+    df_inventory.loc[:, 'product_subtype1'] = df_inventory.loc[:, 'product_subtype1'].astype(str)
+    df_inventory.loc[:, 'product_subtype2'] = df_inventory.loc[:, 'product_subtype2'].astype(str)
 
+    df_inventory.loc[:, 'price'] = df_inventory['price'].map(lambda x: float(get_number_from_string(x)))
+    df_inventory.loc[:, 'price_discounted'] = df_inventory['price_discounted'].map(lambda x: float(get_number_from_string(x)))
+
+    df_inventory.loc[:, 'discount_start'] = df_inventory.loc[:, 'discount_start'].map(lambda x: pd.to_datetime(x))
+    df_inventory.loc[:, 'discount_end'] = df_inventory.loc[:, 'discount_end'].map(lambda x: pd.to_datetime(x))
+
+    df_inventory.loc[:, 'hide_when_empty'] = df_inventory.loc[:, 'hide_when_empty'].astype(bool)
+    df_inventory.loc[:, 'lead_time'] = df_inventory.loc[:, 'lead_time'].astype(int)
+
+    # Filter by product type and active
+    df_inventory = df_inventory.loc[df_inventory['product_type'].map(lambda x: x in ['Symaskiner', 'Symaskintilbehør']), :]
+    df_inventory = df_inventory.loc[df_inventory['active'].map(lambda x: x is True)]
+
+    # Trying to figure out the vendor based on name for certain items.
+    df_inventory.loc[:, 'vendor'] = None
     df_inventory.loc[df_inventory.loc[:, 'title'].map(lambda x: 'janome' in str(x).replace(' ', '').lower()), 'vendor'] = 'Janome'
     df_inventory.loc[df_inventory.loc[:, 'title'].map(lambda x: 'babylock' in str(x).replace(' ', '').lower()), 'vendor'] = 'Baby Lock'
 
     shop = shopify.Shop.current
-
     products = get_all_resources(shopify.Product)
-
     location = shopify.Location.find_first()
 
     skus = []
@@ -77,6 +101,7 @@ def main():
             product.product_type = df_product['product_type']
             variant.price = df_product['price']
             variant.option1 = "Default Title"
+            variant.inventory_policy = "deny" if df_product['hide_when_empty'] else 'continue'
             shopify.InventoryLevel.set(location.id, variant.inventory_item_id, int(df_product['inventory_quantity']))
             variant.save()
             product.save()
@@ -106,19 +131,19 @@ def main():
                     "price": df_product['price'],
                     # "product_id": new_product.id,
                     "requires_shipping": True,
-                    "inventory_quantity": int(df_product['inventory_quantity']),
-                    "inventory_policy": "continue",
+                    "inventory_quantity": df_product['inventory_quantity'],
+                    "inventory_policy": "deny" if df_product['hide_when_empty'] else 'continue',
                     "inventory_management": "shopify",
                     "fulfillment_service": "manual"
                 }
             )
 
-            shopify.InventoryLevel.set(location.id, new_variant.inventory_item_id, int(df_product['inventory_quantity']))
-
             new_product.variants = [new_variant]
             new_product.save()
 
-            # result = new_variant.save()
+            v = new_product.variants[0]  # We only have 1 variant atm. So we don't vare about other variants
+            shopify.InventoryLevel.set(location.id, v.inventory_item_id, int(df_product['inventory_quantity']))
+
     print('Complete')
 
 
