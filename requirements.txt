@@ -1,3 +1,4 @@
 ShopifyAPI
 python-dotenv
 openpyxl
+pandas
