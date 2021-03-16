@@ -1,5 +1,6 @@
 import os
 import pathlib
+from pathlib import Path
 
 import pandas as pd
 import shopify
@@ -22,7 +23,7 @@ def get_number_from_string(x):
     return x.__repr__().replace(',', '.').replace(r'\xa0', '').replace("'", '')
 
 
-def main():
+def main(input_file: Path) -> None:
     # env_path = Path('.env')
     # load_dotenv(dotenv_path=env_path)
     load_dotenv()
@@ -32,12 +33,17 @@ def main():
 
     shop_url = f"https://{key}:{pwd}@{name}.myshopify.com/admin"
     shopify.ShopifyResource.set_site(value=shop_url)
-    input_file = pathlib.Path().absolute() / 'data' / 'inventory.xlsx'
 
-    df_inventory = pd.read_excel(io=input_file, engine='openpyxl')
-    df_inventory.dropna(subset=['id'], axis=0, inplace=True)
+    df = pd.read_excel(io=input_file, engine='openpyxl')
+    df.columns = [x.lower() for x in df.columns]
 
-    df_inventory.columns = [
+    # Some basic validations to assert that we have the correct sheet. The columns varying depending on where the dump is done :-\
+    assert len(df.columns) == 15, 'Expected 16 columns in Excel sheet.'
+    assert df.columns[2] == 'id', 'Expected input data to have "id" in third column'
+
+    df.dropna(subset=['id'], axis=0, inplace=True)
+
+    df.columns = [
         'sku',
         'title',
         'pos_id',
@@ -55,33 +61,33 @@ def main():
         'lead_time'
     ]
 
-    df_inventory.loc[:, 'sku'] = df_inventory.loc[:, 'sku'].map(lambda x: str(x))
-    df_inventory.loc[:, 'title'] = df_inventory.loc[:, 'title'].astype(str)
-    df_inventory.loc[:, 'pos_id'] = df_inventory.loc[:, 'pos_id'].map(lambda x: str(x))
-    df_inventory.loc[:, 'active'] = df_inventory.loc[:, 'active'].astype(bool)
-    df_inventory.loc[:, 'recommended_product'] = df_inventory.loc[:, 'recommended_product'].astype(str)
-    df_inventory.loc[:, 'inventory_quantity'] = df_inventory.loc[:, 'inventory_quantity'].map(lambda x: int(get_number_from_string(x)))
-    df_inventory.loc[:, 'product_type'] = df_inventory.loc[:, 'product_type'].astype(str)
-    df_inventory.loc[:, 'product_subtype1'] = df_inventory.loc[:, 'product_subtype1'].astype(str)
-    df_inventory.loc[:, 'product_subtype2'] = df_inventory.loc[:, 'product_subtype2'].astype(str)
+    df.loc[:, 'sku'] = df.loc[:, 'sku'].map(lambda x: str(x))
+    df.loc[:, 'title'] = df.loc[:, 'title'].astype(str)
+    df.loc[:, 'pos_id'] = df.loc[:, 'pos_id'].map(lambda x: str(x))
+    df.loc[:, 'active'] = df.loc[:, 'active'].astype(bool)
+    df.loc[:, 'recommended_product'] = df.loc[:, 'recommended_product'].astype(str)
+    df.loc[:, 'inventory_quantity'] = df.loc[:, 'inventory_quantity'].map(lambda x: int(get_number_from_string(x)))
+    df.loc[:, 'product_type'] = df.loc[:, 'product_type'].astype(str)
+    df.loc[:, 'product_subtype1'] = df.loc[:, 'product_subtype1'].astype(str)
+    df.loc[:, 'product_subtype2'] = df.loc[:, 'product_subtype2'].astype(str)
 
-    df_inventory.loc[:, 'price'] = df_inventory['price'].map(lambda x: float(get_number_from_string(x)))
-    df_inventory.loc[:, 'price_discounted'] = df_inventory['price_discounted'].map(lambda x: float(get_number_from_string(x)))
+    df.loc[:, 'price'] = df['price'].map(lambda x: float(get_number_from_string(x)))
+    df.loc[:, 'price_discounted'] = df['price_discounted'].map(lambda x: float(get_number_from_string(x)))
 
-    df_inventory.loc[:, 'discount_start'] = df_inventory.loc[:, 'discount_start'].map(lambda x: pd.to_datetime(x))
-    df_inventory.loc[:, 'discount_end'] = df_inventory.loc[:, 'discount_end'].map(lambda x: pd.to_datetime(x))
+    df.loc[:, 'discount_start'] = df.loc[:, 'discount_start'].map(lambda x: pd.to_datetime(x))
+    df.loc[:, 'discount_end'] = df.loc[:, 'discount_end'].map(lambda x: pd.to_datetime(x))
 
-    df_inventory.loc[:, 'hide_when_empty'] = df_inventory.loc[:, 'hide_when_empty'].astype(bool)
-    df_inventory.loc[:, 'lead_time'] = df_inventory.loc[:, 'lead_time'].astype(int)
+    df.loc[:, 'hide_when_empty'] = df.loc[:, 'hide_when_empty'].astype(bool)
+    df.loc[:, 'lead_time'] = df.loc[:, 'lead_time'].astype(int)
 
     # Filter by product type and active
-    df_inventory = df_inventory.loc[df_inventory['product_type'].map(lambda x: x in ['Symaskiner', 'Symaskintilbehør']), :]
-    df_inventory = df_inventory.loc[df_inventory['active'].map(lambda x: x is True)]
+    df = df.loc[df['product_type'].map(lambda x: x in ['Symaskiner', 'Symaskintilbehør']), :]
+    df = df.loc[df['active'].map(lambda x: x is True)]
 
     # Trying to figure out the vendor based on name for certain items.
-    df_inventory.loc[:, 'vendor'] = None
-    df_inventory.loc[df_inventory.loc[:, 'title'].map(lambda x: 'janome' in str(x).replace(' ', '').lower()), 'vendor'] = 'Janome'
-    df_inventory.loc[df_inventory.loc[:, 'title'].map(lambda x: 'babylock' in str(x).replace(' ', '').lower()), 'vendor'] = 'Baby Lock'
+    df.loc[:, 'vendor'] = None
+    df.loc[df.loc[:, 'title'].map(lambda x: 'janome' in str(x).replace(' ', '').lower()), 'vendor'] = 'Janome'
+    df.loc[df.loc[:, 'title'].map(lambda x: 'babylock' in str(x).replace(' ', '').lower()), 'vendor'] = 'Baby Lock'
 
     shop = shopify.Shop.current
     products = get_all_resources(shopify.Product)
@@ -93,8 +99,8 @@ def main():
         variant = product.variants[0]
         sku = variant.sku
         skus.append(sku)
-        if sku in df_inventory['sku'].values:
-            df_product = df_inventory.loc[df_inventory['sku'] == sku].iloc[0]
+        if sku in df['sku'].values:
+            df_product = df.loc[df['sku'] == sku].iloc[0]
             print(f"Updating: {product.title} - sku: {sku}")
             product.title = df_product['title']
             product.vendor = df_product['vendor']
@@ -111,7 +117,7 @@ def main():
             # shopify.Variant.delete(variant.id)
             # shopify.Product.delete(product.id)
 
-    for _, df_product in df_inventory.iterrows():
+    for _, df_product in df.iterrows():
         if df_product.sku not in skus:
             print(f"Importing from POS: {df_product.title} - sku: {df_product.sku}")
             new_product = shopify.Product()
@@ -148,4 +154,5 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    input_file = pathlib.Path().absolute() / 'data' / 'inventory.xlsx'
+    main(input_file=input_file)
