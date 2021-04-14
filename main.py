@@ -82,7 +82,8 @@ def main(input_file: Path) -> None:
 
     # Filter by product type and active
     df = df.loc[df['product_type'].map(lambda x: x in ['Symaskiner', 'Symaskintilbehør']), :]
-    df = df.loc[df['active'].map(lambda x: x is True)]
+    # df = df.loc[df['active'].map(lambda x: x is True)]
+    df = df.loc[df.apply(lambda x: x["active"] or x["title"].lower().startswith("brother"), axis=1)]
 
     # Trying to figure out the vendor based on name for certain items.
     df.loc[:, 'vendor'] = None
