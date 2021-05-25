@@ -1,10 +1,15 @@
 import os
 import pathlib
+import logging
 from pathlib import Path
 
 import pandas as pd
 import shopify
 from dotenv import load_dotenv
+
+logging.basicConfig(format='%(asctime)s | %(name)s | %(levelname)s | %(message)s')
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 
 def get_all_resources(resource_type, **kwargs):
@@ -37,7 +42,8 @@ def main(input_file: Path) -> None:
     df = pd.read_excel(io=input_file, engine='openpyxl')
     df.columns = [x.lower() for x in df.columns]
 
-    # Some basic validations to assert that we have the correct sheet. The columns varying depending on where the dump is done :-\
+    # Some basic validations to assert that we have the correct sheet.
+    # The columns varying depending on where the dump is done :-\
     assert len(df.columns) == 15, 'Expected 16 columns in Excel sheet.'
     assert df.columns[2] == 'id', 'Expected input data to have "id" in third column'
 
@@ -89,6 +95,7 @@ def main(input_file: Path) -> None:
     df.loc[:, 'vendor'] = None
     df.loc[df.loc[:, 'title'].map(lambda x: 'janome' in str(x).replace(' ', '').lower()), 'vendor'] = 'Janome'
     df.loc[df.loc[:, 'title'].map(lambda x: 'babylock' in str(x).replace(' ', '').lower()), 'vendor'] = 'Baby Lock'
+    df.loc[df.loc[:, 'title'].map(lambda x: 'brother' in str(x).replace(' ', '').lower()), 'vendor'] = 'Brother'
 
     shop = shopify.Shop.current
     products = get_all_resources(shopify.Product)
@@ -102,7 +109,7 @@ def main(input_file: Path) -> None:
         skus.append(sku)
         if sku in df['sku'].values:
             df_product = df.loc[df['sku'] == sku].iloc[0]
-            print(f"Updating: {product.title} - sku: {sku}")
+            logger.info(f"Updating: {product.title} - sku: {sku}")
             product.title = df_product['title']
             product.vendor = df_product['vendor']
             product.product_type = df_product['product_type']
@@ -113,14 +120,14 @@ def main(input_file: Path) -> None:
             variant.save()
             product.save()
         else:
-            print(f"Not matched with POS: {product.title} - sku: {sku}")
-            # print(f"Deleting - Not matched with POS: {product.title} - sku: {sku}")
+            logger.warning(f"Not matched with POS: {product.title} - sku: {sku}")
+            # logger.warning(f"Deleting - Not matched with POS: {product.title} - sku: {sku}")
             # shopify.Variant.delete(variant.id)
             # shopify.Product.delete(product.id)
 
     for _, df_product in df.iterrows():
         if df_product.sku not in skus:
-            print(f"Importing from POS: {df_product.title} - sku: {df_product.sku}")
+            logger.info(f"Importing from POS: {df_product.title} - sku: {df_product.sku}")
             new_product = shopify.Product()
 
             # Creating the product.
@@ -136,7 +143,6 @@ def main(input_file: Path) -> None:
                     "position": 1,
                     "sku": df_product['sku'],
                     "price": df_product['price'],
-                    # "product_id": new_product.id,
                     "requires_shipping": True,
                     "inventory_quantity": df_product['inventory_quantity'],
                     "inventory_policy": "deny" if df_product['hide_when_empty'] else 'continue',
@@ -151,7 +157,7 @@ def main(input_file: Path) -> None:
             v = new_product.variants[0]  # We only have 1 variant atm. So we don't vare about other variants
             shopify.InventoryLevel.set(location.id, v.inventory_item_id, int(df_product['inventory_quantity']))
 
-    print('Complete')
+    logger.info('Complete')
 
 
 if __name__ == '__main__':
