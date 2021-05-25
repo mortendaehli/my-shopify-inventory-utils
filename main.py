@@ -25,7 +25,7 @@ def get_all_resources(resource_type, **kwargs):
 
 
 def get_number_from_string(x):
-    return x.__repr__().replace(',', '.').replace(r'\xa0', '').replace("'", '')
+    return float(x.__repr__().replace(',', '.').replace(r'\xa0', '').replace("'", ''))
 
 
 def main(input_file: Path) -> None:
