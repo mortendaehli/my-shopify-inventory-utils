@@ -69,7 +69,7 @@ def main(input_file: Path) -> None:
 
     df.loc[:, 'sku'] = df.loc[:, 'sku'].map(lambda x: str(x))
     df.loc[:, 'title'] = df.loc[:, 'title'].astype(str)
-    df.loc[:, 'pos_id'] = df.loc[:, 'pos_id'].map(lambda x: str(x))
+    df.loc[:, 'pos_id'] = df.loc[:, 'pos_id'].map(lambda x: str(int(float(x))))
     df.loc[:, 'active'] = df.loc[:, 'active'].astype(bool)
     df.loc[:, 'recommended_product'] = df.loc[:, 'recommended_product'].astype(str)
     df.loc[:, 'inventory_quantity'] = df.loc[:, 'inventory_quantity'].map(lambda x: int(get_number_from_string(x)))
@@ -110,7 +110,7 @@ def main(input_file: Path) -> None:
         if sku in df['sku'].values:
             df_product = df.loc[df['sku'] == sku].iloc[0]
             logger.info(f"Updating: {product.title} - sku: {sku}")
-            product.title = df_product['title']
+            # product.title = df_product['title']
             product.vendor = df_product['vendor']
             product.product_type = df_product['product_type']
             variant.price = df_product['price']
