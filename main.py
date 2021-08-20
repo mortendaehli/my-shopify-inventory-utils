@@ -68,7 +68,7 @@ def main(input_file: Path) -> None:
     ]
 
     df.loc[:, 'sku'] = df.loc[:, 'sku'].map(lambda x: str(x))
-    df.loc[:, 'title'] = df.loc[:, 'title'].astype(str)
+    df.loc[:, 'title'] = df.loc[:, 'title'].astype(str).map(lambda x: x.replace("/xa0", ""))
     df.loc[:, 'pos_id'] = df.loc[:, 'pos_id'].map(lambda x: str(int(float(x))))
     df.loc[:, 'active'] = df.loc[:, 'active'].astype(bool)
     df.loc[:, 'recommended_product'] = df.loc[:, 'recommended_product'].astype(str)
@@ -104,26 +104,25 @@ def main(input_file: Path) -> None:
     skus = []
     # Updating existing products
     for product in products:
-        variant = product.variants[0]
-        sku = variant.sku
-        skus.append(sku)
-        if sku in df['sku'].values:
-            df_product = df.loc[df['sku'] == sku].iloc[0]
-            logger.info(f"Updating: {product.title} - sku: {sku}")
-            # product.title = df_product['title']
-            product.vendor = df_product['vendor']
-            product.product_type = df_product['product_type']
-            variant.price = df_product['price']
-            variant.option1 = "Default Title"
-            variant.inventory_policy = "deny" if df_product['hide_when_empty'] else 'continue'
-            shopify.InventoryLevel.set(location.id, variant.inventory_item_id, int(df_product['inventory_quantity']))
-            variant.save()
-            product.save()
-        else:
-            logger.warning(f"Not matched with POS: {product.title} - sku: {sku}")
-            # logger.warning(f"Deleting - Not matched with POS: {product.title} - sku: {sku}")
-            # shopify.Variant.delete(variant.id)
-            # shopify.Product.delete(product.id)
+        for variant in product.variants:
+            skus.append(variant.sku)
+            if variant.sku in df['sku'].values:
+                df_product = df.loc[df['sku'] == variant.sku].iloc[0]
+                logger.info(f"Updating: {product.title} - sku: {variant.sku}")
+                # product.title = df_product['title']
+                product.vendor = df_product['vendor']
+                product.product_type = df_product['product_type']
+                variant.price = df_product['price']
+                variant.option1 = "Default Title"
+                variant.inventory_policy = "deny" if df_product['hide_when_empty'] else 'continue'
+                shopify.InventoryLevel.set(location.id, variant.inventory_item_id, int(df_product['inventory_quantity']))
+                variant.save()
+                product.save()
+            else:
+                logger.warning(f"Not matched with POS: {product.title} - sku: {variant.sku}")
+                # logger.warning(f"Deleting - Not matched with POS: {product.title} - sku: {sku}")
+                # shopify.Variant.delete(variant.id)
+                # shopify.Product.delete(product.id)
 
     for _, df_product in df.iterrows():
         if df_product.sku not in skus:
