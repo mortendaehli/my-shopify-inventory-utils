@@ -3,7 +3,7 @@ from typing import List, Optional
 
 from pydantic import BaseModel, HttpUrl
 
-from minsymaskin.dto.image import Image
+from myshopify.dto.image import Image
 
 
 class ProductMetadata(BaseModel):

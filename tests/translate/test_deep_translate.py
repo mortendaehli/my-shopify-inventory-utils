@@ -1,5 +1,5 @@
-from minsymaskin.translate import DeepTranslator
-from minsymaskin.translate.types import Language
+from myshopify.translate import DeepTranslator
+from myshopify.translate.types import Language
 
 
 def test_german_to_danish():

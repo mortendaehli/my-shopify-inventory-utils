@@ -7,9 +7,9 @@ import pandas as pd
 import shopify
 from dotenv import load_dotenv
 
-import minsymaskin
-from minsymaskin import dto
-from minsymaskin.shopify.inventory import (
+import myshopify
+from myshopify import dto
+from myshopify.shopify.inventory import (
     create_product_with_single_variant,
     get_all_resources,
     get_number_from_string,
@@ -32,7 +32,7 @@ if __name__ == "__main__":
     pwd = os.getenv("MINSYMASKIN_SHOPIFY_PWD")
     name = os.getenv("MINSYMASKIN_SHOPIFY_NAME")
 
-    input_file = Path(minsymaskin.__file__).parent.parent / "data" / "inventory.xlsx"
+    input_file = Path(myshopify.__file__).parent.parent / "data" / "inventory.xlsx"
 
     shop_url = f"https://{key}:{pwd}@{name}.myshopify.com/admin"
     shopify.ShopifyResource.set_site(value=shop_url)

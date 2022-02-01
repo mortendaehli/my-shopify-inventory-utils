@@ -2,7 +2,7 @@ import logging
 
 import shopify
 
-from minsymaskin import dto
+from myshopify import dto
 
 logger = logging.getLogger(__name__)
 

@@ -3,8 +3,8 @@ from typing import List
 
 from bs4 import BeautifulSoup
 
-from minsymaskin import dto
-from minsymaskin.scraping.utils import get_image_from_url, get_page_html_from_url
+from myshopify import dto
+from myshopify.scraping.utils import get_image_from_url, get_page_html_from_url
 
 
 def get_product_list_page(page_number: int = 1):

@@ -1,0 +1,2 @@
+from myshopify.translate.deep_learning import DeepTranslator
+from myshopify.translate.google_translate import GoogleTranslator

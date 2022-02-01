@@ -5,8 +5,8 @@ from pathlib import Path
 
 import pytest
 
-from minsymaskin import dto
-from minsymaskin.scraping.utils import get_image_from_url
+from myshopify import dto
+from myshopify.scraping.utils import get_image_from_url
 
 logging.getLogger("urllib3").setLevel(logging.ERROR)
 logging.getLogger("selenium").setLevel(logging.ERROR)

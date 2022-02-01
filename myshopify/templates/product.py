@@ -1,6 +1,6 @@
 from jinja2 import Environment
 
-from minsymaskin import dto
+from myshopify import dto
 
 PRODUCT_TEMPLATE = """
 <!DOCTYPE html>

@@ -10,7 +10,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-from minsymaskin.translate.types import Language
+from myshopify.translate.types import Language
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +37,7 @@ class DeepTranslator:
             raise ValueError(f"{language_from} is not a supported language.")
 
         # Start a Selenium driver
-        # driver_path = Path(minsymaskin.__file__).parent.parent / "data" / "chromedriver"
+        # driver_path = Path(myshopify.__file__).parent.parent / "data" / "chromedriver"
 
         self.chrome_options = Options()
         self.chrome_options.add_argument("--headless")

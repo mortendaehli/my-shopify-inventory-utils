@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel
 
-from minsymaskin.dto.types import (
+from myshopify.dto.types import (
     ShopifyFulfillmentService,
     ShopifyInventoryManagement,
     ShopifyInventoryPolicy,

@@ -1,4 +1,4 @@
-from minsymaskin.templates.product import render_product_page
+from myshopify.templates.product import render_product_page
 
 
 def test_render_product_page(some_product):

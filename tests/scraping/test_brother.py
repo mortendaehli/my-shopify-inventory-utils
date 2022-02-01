@@ -1,10 +1,10 @@
 from pathlib import Path
 
-import minsymaskin
-from minsymaskin import dto
-from minsymaskin.scraping.brother.products import get_all_products_metadata, get_product_from_product_page
+import myshopify
+from myshopify import dto
+from myshopify.scraping.brother.products import get_all_products_metadata, get_product_from_product_page
 
-DATA_FOLDER = Path(minsymaskin.__file__).parent.parent / "data" / "tmp"
+DATA_FOLDER = Path(myshopify.__file__).parent.parent / "data" / "tmp"
 DATA_FOLDER.mkdir(parents=True, exist_ok=True)
 
 
