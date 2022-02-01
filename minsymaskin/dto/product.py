@@ -3,22 +3,21 @@ from typing import List, Optional
 
 from pydantic import BaseModel, HttpUrl
 
+from minsymaskin.dto.image import Image
 
-class ProductListItem(BaseModel):
-    title: str
-    product_code: str
+
+class ProductMetadata(BaseModel):
+    name: str
+    short_code: str
+    brand: str
     sku: Optional[str]
     url: HttpUrl
 
 
-class ProductList(BaseModel):
-    products: List[ProductListItem]
-
-
 class Product(BaseModel):
     name: str
-    sku: Optional[str] = None
-    brand: str
+    metadata: Optional[ProductMetadata] = None
+    images: Optional[List[Image]]
     header: str
     summary: str
     features_header: Optional[str]  # Egenskaper
@@ -28,6 +27,6 @@ class Product(BaseModel):
     detailed_description_header: Optional[str]  # Bli bedre kjent med {name}
     detailed_description: str
     optional_accessory_header: Optional[str]  # Valgfritt tilbehør
-    optional_accessory: List[str]
+    optional_accessory: List[ProductMetadata]
     technical_specification_header: Optional[str]  # Tekniske egenskaper
     technical_specification_dict: OrderedDict

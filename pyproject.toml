@@ -21,6 +21,7 @@ markdownify = "^0.10.3"
 Markdown = "^3.3.6"
 pyperclip = "^1.8.2"
 retry = "^0.9.2"
+pyodbc = "^4.0.32"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.5"
