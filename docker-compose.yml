@@ -1,0 +1,32 @@
+version: "3.8"
+services:
+
+  database:
+    # image: mcr.microsoft.com/mssql/server:2019-latest
+    build:
+      context: .
+      dockerfile: ./db/Dockerfile
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=${SQL_PASSWORD}
+      - MSSQL_PID=Express
+    volumes:
+      - sql1data:/var/opt/mssql
+    ports:
+      - "1433:1433"
+    expose:
+      - "1433"
+
+  backend:
+    depends_on:
+      - database
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    env_file:
+      - .env
+    volumes:
+      - ./:/code
+
+volumes:
+  sql1data:

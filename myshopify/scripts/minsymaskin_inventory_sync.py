@@ -11,7 +11,7 @@ import myshopify
 from myshopify import dto
 from myshopify.shopify.inventory import (
     create_product_with_single_variant,
-    get_all_resources,
+    get_all_shopify_resources,
     get_number_from_string,
     update_variant,
 )
@@ -85,11 +85,11 @@ if __name__ == "__main__":
     df.loc[df.loc[:, "title"].map(lambda x: "brother" in str(x).replace(" ", "").lower()), "vendor"] = "Brother"
 
     # shop = shopify.Shop.current
-    products = get_all_resources(shopify.Product)
+    products = get_all_shopify_resources(shopify.Product)
     location = shopify.Location.find_first()
 
     skus = []
-    # Updating existing products
+    # Updating existing products (variants)
     for product in products:
         for variant in product.variants:
             skus.append(variant.sku)

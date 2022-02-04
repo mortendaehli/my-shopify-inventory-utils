@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Any
 
 from pydantic import BaseModel
 
@@ -68,3 +68,20 @@ class ProductVariant(BaseModel):
     updated_at: Optional[datetime] = None
     weight: Optional[int] = None
     weight_unit: Optional[ShopifyWeightUnit] = None
+
+
+class ProductImage(BaseModel):
+    
+    # For upload
+    data: Optional[Any]
+    
+    # For read?
+    created_at: Optional[datetime] = None
+    id: Optional[int] = None
+    position: Optional[int] = None
+    product_id: Optional[int]
+    variant_id: Optional[List[int]]
+    src: Optional[str]
+    width: Optional[int]
+    height: Optional[int]
+    updated_at: Optional[datetime]

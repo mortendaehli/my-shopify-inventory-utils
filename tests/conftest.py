@@ -44,7 +44,7 @@ logging.basicConfig(level=logging.DEBUG, handlers=[file_handler, stream_handler]
 
 @pytest.fixture
 def product_metadata():
-    dto.ProductMetadata(
+    return dto.ProductMetadata(
         name="Sewing machine", short_code="machine1", brand="Some brand", sku="100040", url="http://www.example.com"
     )
 
@@ -70,20 +70,7 @@ def some_product(product_metadata, some_image) -> dto.Product:
         detailed_description_header="Get to know the details!",
         detailed_description="This is an awesome product!",
         optional_accessory_header="Optional accessory",
-        optional_accessory=["Option A", "Option B", "Option C"],
+        optional_accessory=[product_metadata],
         technical_specification_header="Specifications",
         technical_specification_dict=OrderedDict({("weight", "9.8kg"), ("size", "120x140cm")}),
-    )
-
-
-@pytest.fixture
-def some_shopify_product():
-    return dto.ShopifyProduct(
-        title="Some product name",
-        sku="1000",
-        inventory_quality=10,
-        product_type="type1",
-        price=13.30,
-        hide_when_empty=True,
-        vendor="Vendor1",
     )

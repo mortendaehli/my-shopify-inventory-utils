@@ -1,7 +1,7 @@
 from collections import OrderedDict
 from typing import List, Optional
 
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel, HttpUrl, Field
 
 from myshopify.dto.image import Image
 
@@ -27,6 +27,6 @@ class Product(BaseModel):
     detailed_description_header: Optional[str]  # Bli bedre kjent med {name}
     detailed_description: str
     optional_accessory_header: Optional[str]  # Valgfritt tilbehør
-    optional_accessory: List[ProductMetadata]
+    optional_accessory: List[ProductMetadata] = Field(default_factory=list)
     technical_specification_header: Optional[str]  # Tekniske egenskaper
     technical_specification_dict: OrderedDict
