@@ -6,13 +6,14 @@ import shopify
 from PIL import Image
 
 from myshopify import dto
+from myshopify.utils import expand_to_square
 
 logger = logging.getLogger(__name__)
 
 
-def _image_to_bytes(image: Image) -> bytes:
+def _image_to_bytes(image: Image, image_format: str) -> bytes:
     buffered = BytesIO()
-    image.save(buffered, format=image.format)
+    image.save(buffered, format=image_format)
     return buffered.getvalue()
 
 
@@ -53,22 +54,31 @@ def create_variant(variant_dto: dto.shopify.ProductVariant) -> shopify.Variant:
     return variant
 
 
-def add_images_to_product(product: shopify.Product, image_list: List[Image.Image]) -> List[shopify.Image]:
+def add_images_to_product(
+    product: shopify.Product, image_list: List[Image.Image], make_square: bool = True, resize: bool = True
+) -> List[shopify.Image]:
+    """
+    Note! We are resizing all images to squares of (2048, 2048).
+    """
     assert product.id is not None
     images = []
     for i, image in enumerate(image_list):
+        image_format = image.format
         new_shopify_image = shopify.Image()
         new_shopify_image.product_id = product.id
         new_shopify_image.variant_ids = [variant.id for variant in product.variants]
+        if make_square:
+            image = expand_to_square(image)
+        if resize:
+            image = image.resize((2048, 2048))
         new_shopify_image.attach_image(
-            data=_image_to_bytes(image), filename=f"{product.title.replace(' ', '_').lower()}_.jpg"
+            data=_image_to_bytes(image, image_format=image_format),
+            filename=f"{product.title.replace(' ', '_').lower()}_.{image_format.lower()}",
         )
         if new_shopify_image.errors:
             raise ValueError(new_shopify_image.errors)
         new_shopify_image.save()
         images.append(new_shopify_image)
-    # product.images = images
-    # product.save()
     return images
 
 
