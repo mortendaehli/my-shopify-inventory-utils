@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 
+import myshopify.dto.product
 from myshopify import dto
 from myshopify.scraping.utils import get_image_from_url
 
@@ -52,12 +53,14 @@ def product_metadata():
 @pytest.fixture
 def some_image():
     url = "https://www.brother.eu/-/media/product-images/supplies/sewing-and-craft/sewing-machines/a80/a80_right.png"
-    return dto.Image(name="a80_right", alt="Alternative text", suffix="png", url=url, image=get_image_from_url(url=url))
+    return myshopify.dto.product.ProductImage(
+        name="a80_right", alt="Alternative text", suffix="png", url=url, image=get_image_from_url(url=url)
+    )
 
 
 @pytest.fixture
-def some_product(product_metadata, some_image) -> dto.Product:
-    return dto.Product(
+def some_product(product_metadata, some_image) -> dto.ProductDescription:
+    return dto.ProductDescription(
         name="Sewing machine",
         metadata=product_metadata,
         images=[some_image],

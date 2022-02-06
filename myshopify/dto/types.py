@@ -9,7 +9,6 @@ class ShopifyProductStatus(str, Enum):
 
 class ShopifyInventoryManagement(str, Enum):
     SHOPIFY = "shopify"
-    NULL = None
     FULFILLMENT_SERVICE = "fulfillment_service"
 
 

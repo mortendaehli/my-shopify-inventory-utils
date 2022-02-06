@@ -10,9 +10,11 @@ from dotenv import load_dotenv
 import myshopify
 from myshopify import dto
 from myshopify.shopify.inventory import (
-    create_product_with_single_variant,
+    create_product,
+    create_variant,
     get_all_shopify_resources,
     get_number_from_string,
+    update_inventory,
     update_variant,
 )
 
@@ -35,7 +37,7 @@ if __name__ == "__main__":
     input_file = Path(myshopify.__file__).parent.parent / "data" / "inventory.xlsx"
 
     shop_url = f"https://{key}:{pwd}@{name}.myshopify.com/admin"
-    shopify.ShopifyResource.set_site(value=shop_url)
+    shopify.ShopifyResource.set_site(value=shop_url)  # noqa
 
     df = pd.read_excel(io=input_file, engine="openpyxl")
     df.columns = [x.lower() for x in df.columns]
@@ -94,57 +96,69 @@ if __name__ == "__main__":
         for variant in product.variants:
             skus.append(variant.sku)
             if variant.sku in df["sku"].values:
-                df_product = df.loc[df["sku"] == variant.sku].iloc[0]
+                product_row = df.loc[df["sku"] == variant.sku].iloc[0]
 
                 logger.info(f"Updating: {variant.title} - sku: {variant.sku}")
                 # We are only updating a few fields since we want description text, images, etc.
 
                 variant_update = dto.shopify.ProductVariant(
+                    id=variant.id,
                     product_id=product.id,
                     sku=variant.sku,
-                    price=df_product["price"],
+                    price=product_row["price"],
                     inventory_policy=dto.types.ShopifyInventoryPolicy.DENY
-                    if df_product["hide_when_empty"]
+                    if product_row["hide_when_empty"]
                     else dto.types.ShopifyInventoryPolicy.CONTINUE,
                     inventory_management=dto.types.ShopifyInventoryManagement.SHOPIFY,
                     fulfillment_service=dto.types.ShopifyFulfillmentService.MANUAL,
                 )
 
+                update_variant(variant_update_dto=variant_update)
+
                 inventory_level_update = dto.shopify.InventoryLevel(
                     inventory_item_id=variant.inventory_item_id,
                     location_id=location.id,
-                    available=int(df_product["inventory_quantity"]),
+                    available=int(product_row["inventory_quantity"]),
                 )
-                update_variant(
-                    variant=variant, variant_update=variant_update, inventory_level_update=inventory_level_update
-                )
+                update_inventory(inventory_level_dto=inventory_level_update)
             else:
                 logger.warning(f"Not matched with POS: {product.title} - sku: {variant.sku}")
 
-    for _, df_product in df.iterrows():
-        if df_product.sku not in skus:
-            logger.info(f"Importing from POS: {df_product.title} - sku: {df_product.sku}")
+    for _, product_row in df.iterrows():
+        if product_row.sku not in skus:
+            logger.info(f"Importing from POS: {product_row.title} - sku: {product_row.sku}")
 
             new_product = dto.shopify.Product(
-                title=df_product["title"],
-                vendor=df_product["vendor"],
-                product_type=df_product["product_type"],
-                inventory_quantity=df_product["inventory_quantity"],
+                title=product_row["title"],
+                body_html=None,
+                images=[],
+                options=None,
+                product_type=product_row["product_type"],
                 status=dto.types.ShopifyProductStatus.ACTIVE,
+                tags=",".join(product_row[["product_type", "product_subtype1", "product_subtype2"]].dropna().as_list()),
+                vendor=product_row["vendor"],
+                variants=None,
             )
+            product = create_product(product_dto=new_product)
 
             new_variant = dto.shopify.ProductVariant(
-                product_id=None,
-                sku=df_product["sku"],
-                price=df_product["price"],
-                inventory_quantity=df_product["inventory_quantity"],
+                product_id=product.id,
+                sku=product_row["sku"],
+                price=product_row["price"],
                 inventory_policy=dto.types.ShopifyInventoryPolicy.DENY
-                if df_product["hide_when_empty"]
+                if product_row["hide_when_empty"]
                 else dto.types.ShopifyInventoryPolicy.CONTINUE,
                 inventory_management=dto.types.ShopifyInventoryManagement.SHOPIFY,
                 fulfillment_service=dto.types.ShopifyFulfillmentService.MANUAL,
                 position=1,
             )
-            create_product_with_single_variant(new_product=new_product, new_variant=new_variant)
+            variant = create_variant(variant_dto=new_variant)
+
+            inventory_level_update = dto.shopify.InventoryLevel(
+                inventory_item_id=variant.inventory_item_id,
+                location_id=location.id,
+                available=int(product_row["inventory_quantity"]),
+            )
+            update_inventory(inventory_level_dto=inventory_level_update)
 
     logger.info("Complete")

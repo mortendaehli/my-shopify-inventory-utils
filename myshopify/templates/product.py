@@ -63,7 +63,7 @@ PRODUCT_TEMPLATE = """
 """
 
 
-def render_product_page(product: dto.Product) -> str:
+def render_product_page(product: dto.ProductDescription) -> str:
     env = Environment().from_string(source=PRODUCT_TEMPLATE)
     result = env.render(
         name=product.name,

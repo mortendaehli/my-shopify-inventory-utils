@@ -3,6 +3,7 @@ from typing import List
 
 from bs4 import BeautifulSoup
 
+import myshopify.dto.product
 from myshopify import dto
 from myshopify.scraping.utils import get_image_from_url, get_page_html_from_url
 
@@ -35,12 +36,12 @@ def get_all_products_metadata() -> List[dto.ProductMetadata]:
     return product_list
 
 
-def get_images_from_product_page(url: str) -> List[dto.Image]:
+def get_images_from_product_page(url: str) -> List[myshopify.dto.product.ProductImage]:
     product_page = get_page_html_from_url(url=url)
     soup = BeautifulSoup(product_page, "html.parser")
 
     return [
-        dto.Image(
+        myshopify.dto.product.ProductImage(
             name=image["src"].split(".png")[0].split("/")[-1],
             alt=image["alt"],
             suffix=".png",
@@ -53,7 +54,7 @@ def get_images_from_product_page(url: str) -> List[dto.Image]:
     ]
 
 
-def get_product_from_product_page(product_metadata: dto.ProductMetadata) -> dto.Product:
+def get_product_from_product_page(product_metadata: dto.ProductMetadata) -> dto.ProductDescription:
     """
     Parsing a Brother product page and creating a product description
     """
@@ -97,7 +98,7 @@ def get_product_from_product_page(product_metadata: dto.ProductMetadata) -> dto.
         }
     )
 
-    return dto.Product(
+    return dto.ProductDescription(
         name=name,
         metadata=product_metadata,
         header=header,

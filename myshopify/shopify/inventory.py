@@ -1,11 +1,19 @@
 import logging
+from io import BytesIO
+from typing import List
 
 import shopify
+from PIL import Image
 
 from myshopify import dto
-from typing import Optional, List
 
 logger = logging.getLogger(__name__)
+
+
+def _image_to_bytes(image: Image) -> bytes:
+    buffered = BytesIO()
+    image.save(buffered, format=image.format)
+    return buffered.getvalue()
 
 
 def get_all_shopify_resources(resource_type, **kwargs):
@@ -24,60 +32,74 @@ def get_number_from_string(x):
     return float(x.__repr__().replace(",", ".").replace(r"\xa0", "").replace("'", ""))
 
 
-def create_product_with_single_variant(
-        new_product: dto.shopify.Product,
-        new_variant: dto.shopify.ProductVariant,
-        images: Optional[List[dto.shopify.ProductImage]]
-):
+def create_product(
+    product_dto: dto.shopify.Product,
+) -> shopify.Product:
     # Creating the product.
-    new_shopify_product = shopify.Product()
-    new_shopify_product.title = new_product.title
-    new_shopify_product.vendor = new_product.vendor
-    new_shopify_product.product_type = new_product.product_type
-    new_shopify_product.inventory_quantity = new_product.inventory_quantity
-    new_shopify_product.save()
+    product = product_dto.to_shopify_object()
+    product.save()
+    if product.errors:
+        raise ValueError(product.errors)
 
-    # Then creating the (only) variant and saving....
-    new_shopify_variant = shopify.Variant()
-    new_shopify_variant.position = new_variant.position
-    new_shopify_variant.sku = new_variant.sku
-    new_shopify_variant.price = new_variant.price
-    new_shopify_variant.inventory_quantity = new_variant.inventory_quantity
-    new_shopify_variant.inventory_policy = new_variant.inventory_policy
-    new_shopify_variant.inventory_management = new_variant.inventory_management
-    new_shopify_variant.fulfillment_service = new_variant.fulfillment_service
+    return product
 
-    new_shopify_product.variants = [new_shopify_variant]
-    new_shopify_product.save()
 
-    v = new_shopify_product.variants[0]  # We only have 1 variant atm. So we don't vare about other variants
+def create_variant(variant_dto: dto.shopify.ProductVariant) -> shopify.Variant:
+    # Creating the product.
+    variant = variant_dto.to_shopify_object()
+    variant.save()
+    if variant.errors:
+        raise ValueError(variant.errors)
+    return variant
 
-    inventory_level_update = dto.shopify.InventoryLevel(
-        inventory_item_id=new_shopify_variant.inventory_item_id,
-        location_id=v.id,
-        available=new_shopify_variant.inventory_quantity,
-    )
 
-    shopify.InventoryLevel.set(
-        location_id=inventory_level_update.location_id,
-        inventory_item_id=inventory_level_update.inventory_item_id,
-        available=inventory_level_update.available,
-    )
+def add_images_to_product(product: shopify.Product, image_list: List[Image.Image]) -> List[shopify.Image]:
+    assert product.id is not None
+    images = []
+    for i, image in enumerate(image_list):
+        new_shopify_image = shopify.Image()
+        new_shopify_image.product_id = product.id
+        new_shopify_image.variant_ids = [variant.id for variant in product.variants]
+        new_shopify_image.attach_image(
+            data=_image_to_bytes(image), filename=f"{product.title.replace(' ', '_').lower()}_.jpg"
+        )
+        if new_shopify_image.errors:
+            raise ValueError(new_shopify_image.errors)
+        new_shopify_image.save()
+        images.append(new_shopify_image)
+    # product.images = images
+    # product.save()
+    return images
+
+
+def update_product(
+    product_update_dto: dto.shopify.Product,
+) -> shopify.Product:
+    assert product_update_dto.id is not None
+    product = shopify.Variant.find(id_=product_update_dto.id)
+    product_update_dto.to_shopify_object(existing_object=product)
+    if product.errors:
+        raise ValueError(product.errors)
+    product.save()
+    return product
 
 
 def update_variant(
-    variant: shopify.Variant,
-    variant_update: dto.shopify.ProductVariant,
-    inventory_level_update: dto.shopify.InventoryLevel,
-) -> None:
-    
-    variant.price = variant_update.price
-    variant.option = variant_update.option
-    variant.inventory_policy = variant_update.inventory_policy
-
-    shopify.InventoryLevel.set(
-        location_id=inventory_level_update.location_id,
-        inventory_item_id=inventory_level_update.inventory_item_id,
-        available=inventory_level_update.available,
-    )
+    variant_update_dto: dto.shopify.ProductVariant,
+) -> shopify.Variant:
+    assert variant_update_dto.id is not None
+    variant = shopify.Variant.find(id_=variant_update_dto.id)
+    variant_update_dto.to_shopify_object(existing_object=variant)
+    if variant.errors:
+        raise ValueError(variant.errors)
     variant.save()
+    return variant
+
+
+def update_inventory(inventory_level_dto: dto.shopify.InventoryLevel) -> None:
+    assert inventory_level_dto.inventory_item_id is not None
+    shopify.InventoryLevel.set(
+        location_id=inventory_level_dto.location_id,
+        inventory_item_id=inventory_level_dto.inventory_item_id,
+        available=inventory_level_dto.available,
+    )

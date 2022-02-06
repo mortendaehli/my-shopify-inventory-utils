@@ -1,6 +1,6 @@
 # Ubuntu 20.04 base with Python runtime and pyodbc to connect to SQL Server
-FROM ubuntu:20.04
-
+FROM ubuntu:21.04
+ARG DEBIAN_FRONTEND=noninteractive
 WORKDIR /code
 
 # apt-get and system utilities
@@ -22,12 +22,16 @@ RUN /bin/bash -c "source ~/.bashrc"
 
 # python libraries
 RUN apt-get update -y && \
-    apt-get install -y python3-pip python3-dev
+    apt-get install -y python3-pip python3-dev python-is-python3
 
 # install necessary locales, this prevents any locale errors related to Microsoft packages
 RUN apt-get update && apt-get install -y locales \
     && echo "en_US.UTF-8 UTF-8" > /etc/locale.gen \
     && locale-gen
 
+COPY pyproject.toml poetry.lock ./
+RUN pip install poetry && poetry config virtualenvs.create false
+RUN poetry install --no-root
+
 # you can also use regular install of the packages
-RUN pip3 install pyodbc SQLAlchemy ShopifyAPI python-dotenv pandas Pillow pydantic retry
+RUN pip install pyodbc SQLAlchemy

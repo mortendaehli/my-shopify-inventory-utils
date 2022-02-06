@@ -1,9 +1,7 @@
 from collections import OrderedDict
-from typing import List, Optional
+from typing import Any, List, Optional
 
-from pydantic import BaseModel, HttpUrl, Field
-
-from myshopify.dto.image import Image
+from pydantic import BaseModel, Field, HttpUrl
 
 
 class ProductMetadata(BaseModel):
@@ -14,10 +12,18 @@ class ProductMetadata(BaseModel):
     url: HttpUrl
 
 
-class Product(BaseModel):
+class ProductImage(BaseModel):
+    name: str
+    alt: str
+    suffix: str
+    url: HttpUrl
+    image: Any
+
+
+class ProductDescription(BaseModel):
     name: str
     metadata: Optional[ProductMetadata] = None
-    images: Optional[List[Image]]
+    images: Optional[List[ProductImage]]
     header: str
     summary: str
     features_header: Optional[str]  # Egenskaper
