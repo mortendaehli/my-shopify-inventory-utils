@@ -36,24 +36,8 @@ LEFT JOIN Units uni ON uni.UnitID = art.UnitID
 LEFT JOIN Suppliers sup ON sup.SupplierID = art.SupplierID
 LEFT JOIN Manufacturers man ON man.ManufacturerID = art.ManufacturerID
 LEFT JOIN EanNos ean ON ean.ArticleID = art.ArticleId
-WHERE art.MainGroupID = 12 AND ArticleNo LIKE '1522%'
+WHERE art.MainGroupID = 12 AND ArticleNo LIKE 48344
 ;
 
--- Is this the correct way of calculating article stock?
-SELECT
-       orl.ArticleID,
-       art.ArticleNo,
-       art.Name,
-       SUM(COUNT) as ArticleStock
-FROM OrderLines orl
-LEFT JOIN Articles art On art.ArticleID = orl.ArticleID AND art.ArticleNo LIKE '1522%'
-GROUP BY orl.ArticleID,  art.ArticleNo, art.Name
-;
 
-SELECT
-    rec.aid,
-    COUNT(rec.C) - COUNT(sol.C)
-FROM Received rec
-LEFT JOIN Sold sol ON sol.aid = rec.aid AND rec.aid in (54159, 54160, 54162, 54163, 54164, 54165)
-GROUP BY rec.aid
-;
+SELECT * FROM Articles WHERE PriceUnit LIKE 'meter' ORDER BY Name

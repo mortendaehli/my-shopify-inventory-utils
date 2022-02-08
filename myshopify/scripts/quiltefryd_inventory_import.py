@@ -4,6 +4,7 @@ import os
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import shopify
 from dotenv import load_dotenv
@@ -51,6 +52,7 @@ if __name__ == "__main__":
             variant.destroy()
         for product in products:
             product.destroy()
+
     # shop = shopify.Shop.current
     products = get_all_shopify_resources(shopify.Product)
     location = shopify.Location.find_first()
@@ -66,6 +68,7 @@ if __name__ == "__main__":
                 # We are only updating a few fields since we want description text, images, etc.
 
                 variant_dto = dto.shopify.ProductVariant(
+                    id=variant.id,
                     product_id=product.id,
                     sku=variant.sku,
                     price=product_row["price"],
@@ -80,7 +83,7 @@ if __name__ == "__main__":
                 inventory_level_update = dto.shopify.InventoryLevel(
                     inventory_item_id=variant.inventory_item_id,
                     location_id=location.id,
-                    available=0,
+                    available=product_row["available"],
                 )
                 update_inventory(inventory_level_dto=inventory_level_update)
             else:
@@ -123,9 +126,9 @@ if __name__ == "__main__":
             inventory_level_update = dto.shopify.InventoryLevel(
                 inventory_item_id=variant.inventory_item_id,
                 location_id=location.id,
-                available=1,
+                available=int(np.nan_to_num(product_row["available"], nan=0)),
             )
 
-            images = add_images_to_product(product=product, image_list=[Image.open(io.BytesIO(product_row.images))])
+            images = add_images_to_product(product=product, image_list=[Image.open(io.BytesIO(product_row.images))] if product_row.images else [])
             update_inventory(inventory_level_dto=inventory_level_update)
             print("Done!")
