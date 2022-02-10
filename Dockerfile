@@ -30,9 +30,8 @@ RUN apt-get update && apt-get install -y locales \
     && locale-gen
 
 COPY pyproject.toml poetry.lock ./
-COPY . .
 RUN pip install poetry && poetry config virtualenvs.create false
-RUN poetry install
+RUN poetry install --no-root
 
 # you can also use regular install of the packages
 RUN pip install pyodbc SQLAlchemy

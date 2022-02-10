@@ -3,7 +3,6 @@ WITH Products AS (
         -- Product
         art.Description AS body_html,
         art.Picture AS images,
-        ISNULL(web1.Name, 'Annet') AS product_type,
         art.Name                                             AS title,
         CASE
             WHEN art.Name LIKE '%janome%' THEN 'Janome'
@@ -25,7 +24,12 @@ WITH Products AS (
         art.ArticleID AS PCKasseID,
         art.PriceUnit                                        AS price_unit,
         CASE
+            WHEN art.PriceUnit LIKE 'meter' THEN FLOOR((CAST(rec.C AS FLOAT) - CAST(sol.C AS FLOAT)) * 10.0)
+            ELSE FLOOR(rec.C - sol.C)
+            END AS available,
+        CASE
             WHEN grp.Name LIKE 'symaskiner' THEN 0
+            WHEN grp.Name LIKE N'Symaskintilbehør' THEN 0
             ELSE 1
             END                                   AS hide_when_empty,
         CASE WHEN art.OfferPrice > 0 THEN art.OfferPrice END AS discounted_price,
@@ -53,7 +57,8 @@ WITH Products AS (
             WHEN web3.Name LIKE 'ikke i bruk' THEN NULL
             ELSE web3.Name
             END AS web_group_name_3,
-        CASE WHEN CAST(CURRENT_TIMESTAMP - LastUpdate AS INT) < 90 THEN 'Nyhet' END AS new_tag
+        CASE WHEN CAST(CURRENT_TIMESTAMP - LastUpdate AS INT) < 90 THEN 'Nyhet' END AS new_tag,
+           art.VisibleOnWeb
 
     FROM Articles art
              LEFT JOIN WebArticleGroup1s web1 ON web1.WebArticleGroup1ID = art.WebArticleGroup1ID
@@ -62,7 +67,11 @@ WITH Products AS (
              LEFT JOIN MainGroups grp ON grp.MainGroupID = art.MainGroupID
              LEFT JOIN Suppliers sup ON sup.SupplierID = art.SupplierID
              LEFT JOIN Manufacturers man ON man.ManufacturerID = art.ManufacturerID
-    WHERE art.VisibleOnWeb = 1
+             LEFT JOIN Sold sol ON sol.aid = art.ArticleID
+             LEFT JOIN Received rec ON rec.aid = art.ArticleID AND (rec.C > 0 OR art.Picture IS NOT NULL)
+    WHERE
+       (art.VisibleOnWeb = 1 AND NOT art.SellAsComponents = 1)  -- Visible on web and not sell as components of a main product.
+       OR (art.VisibleOnWeb = 0 AND art.SellAsComponents = 1 AND art.Picture IS NOT NULL AND CAST(rec.C - sol.C AS INT) > 0)
 )
 SELECT
        CASE
@@ -70,37 +79,30 @@ SELECT
            ELSE body_html
            END AS body_html,
        images,
-       product_type,
+       ISNULL(web_group_name_1, 'Annet') AS product_type,
        title,
        vendor,
        PCKasseID,  -- remove me.
        pro.sku,
        CASE
-            WHEN price_unit LIKE 'meter' THEN ROUND(CAST(price AS FLOAT) * 10.0, 1)  -- This is stupid! meter is in fact cm.
+            WHEN price_unit LIKE 'meter' THEN ROUND(CAST(price AS FLOAT) / 10.0, 1)
             WHEN price IS NULL THEN 0
             ELSE price
             END AS price,
-       price AS org_price,
        CASE
             WHEN price_unit LIKE 'meter' THEN 'desimeter'
             ELSE price_unit
             END AS price_unit,
-       CASE
-            WHEN price_unit LIKE 'meter' THEN (CAST(rec.C AS FLOAT) - CAST(sol.C AS FLOAT)) / 10.0  -- This is stupid! meter is in fact cm.
-            ELSE rec.C - sol.C
-            END AS available,
+        available,
        hide_when_empty,
        CASE WHEN
            CURRENT_TIMESTAMP < discount_end THEN discounted_price END AS discounted_price,
        discount_start,
        discount_end,
-       product_group_name,
        web_group_name_1,
        web_group_name_2,
        web_group_name_3,
-       CONCAT(product_group_name, ',', web_group_name_1, ',', web_group_name_2, ',', web_group_name_3, ',', new_tag)    AS tags
+       CONCAT(web_group_name_1, ',', web_group_name_2, ',', web_group_name_3, ',', new_tag)    AS tags
 FROM Products pro
-LEFT JOIN Sold sol ON sol.aid = pro.PCKasseID
-LEFT JOIN Received rec ON rec.aid = pro.PCKasseID AND (rec.C > 0 OR pro.images IS NOT NULL)
 --ORDER BY pro.sku
 ;

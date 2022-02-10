@@ -31,3 +31,15 @@ class ShopifyFulfillmentService(str, Enum):
 class ShopifyPublishScope(str, Enum):
     WEB = "web"
     GLOBAL = "global"
+
+
+class ShopifyValueType(str, Enum):
+    string = "string"
+    integer = "integer"
+    json_string = "json_string"
+
+
+class ShopifyType(str, Enum):
+    single_line_text_field = "single_line_text_field"
+    number_integer = "number_integer"
+    number_decimal = "number_decimal"

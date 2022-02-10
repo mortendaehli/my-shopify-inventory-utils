@@ -38,6 +38,3 @@ LEFT JOIN Manufacturers man ON man.ManufacturerID = art.ManufacturerID
 LEFT JOIN EanNos ean ON ean.ArticleID = art.ArticleId
 WHERE art.MainGroupID = 12 AND ArticleNo LIKE 48344
 ;
-
-
-SELECT * FROM Articles WHERE PriceUnit LIKE 'meter' ORDER BY Name
