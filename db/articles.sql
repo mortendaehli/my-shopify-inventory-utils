@@ -14,7 +14,7 @@ SELECT TOP(100)
     art.OfferPrice AS DiscountedPrice,
     art.StartOfferPrice AS DiscountStart,
     art.StopOfferPrice AS DiscountEnd,
-    art.Description AS Descroption,
+    art.Description AS Description,
     art.VisibleOnWeb AS IsActive,
     art.HideWebifEmpty AS HideWhenEmpty,
     art.Picture AS ProductImage,

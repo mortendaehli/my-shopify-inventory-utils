@@ -10,6 +10,8 @@ WITH Products AS (
             WHEN art.Name LIKE '%brother%' THEN 'Brother'
             WHEN sup.Name LIKE 'byannie' THEN 'By Annie'
             WHEN sup.Name LIKE 'annaka' THEN 'AnnAKa'
+            WHEN art.Name LIKE '%guterman%' OR art.Name LIKE '%gutterman%'  THEN N'Gütermann'
+            WHEN art.Name LIKE 'Organ needle%' THEN 'Organ Needles'
             ELSE sup.Name
             END                                              AS vendor,
 
@@ -21,7 +23,7 @@ WITH Products AS (
             END AS price,
 
         -- Additional
-        art.ArticleID AS PCKasseID,
+        --art.ArticleID AS PCKasseID,
         art.PriceUnit                                        AS price_unit,
         CASE
             WHEN art.PriceUnit LIKE 'meter' THEN FLOOR((CAST(rec.C AS FLOAT) - CAST(sol.C AS FLOAT)) * 10.0)
@@ -74,35 +76,27 @@ WITH Products AS (
        OR (art.VisibleOnWeb = 0 AND art.SellAsComponents = 1 AND art.Picture IS NOT NULL AND CAST(rec.C - sol.C AS INT) > 0)
 )
 SELECT
-       CASE
-           WHEN price_unit LIKE 'meter' THEN CONCAT('Pris per desimeter' + CHAR(10) + CHAR(10), body_html)
-           ELSE body_html
-           END AS body_html,
-       images,
-       ISNULL(web_group_name_1, 'Annet') AS product_type,
-       title,
-       vendor,
-       PCKasseID,  -- remove me.
-       pro.sku,
-       CASE
-            WHEN price_unit LIKE 'meter' THEN ROUND(CAST(price AS FLOAT) / 10.0, 1)
-            WHEN price IS NULL THEN 0
-            ELSE price
-            END AS price,
-       CASE
-            WHEN price_unit LIKE 'meter' THEN 'desimeter'
-            ELSE price_unit
-            END AS price_unit,
-        available,
-       hide_when_empty,
-       CASE WHEN
-           CURRENT_TIMESTAMP < discount_end THEN discounted_price END AS discounted_price,
-       discount_start,
-       discount_end,
-       web_group_name_1,
-       web_group_name_2,
-       web_group_name_3,
-       CONCAT(web_group_name_1, ',', web_group_name_2, ',', web_group_name_3, ',', new_tag)    AS tags
+    body_html,
+    images,
+    ISNULL(web_group_name_1, 'Annet') AS product_type,
+    title,
+    vendor,
+    -- PCKasseID,  -- remove me.
+    pro.sku,
+    CASE
+         WHEN price_unit LIKE 'meter' THEN ROUND(CAST(price AS FLOAT) / 10.0, 1)
+         WHEN price IS NULL THEN 0
+         ELSE price
+         END AS price,
+    CASE
+        WHEN price_unit LIKE 'meter' THEN 'desimeter'
+        ELSE price_unit
+        END AS price_unit,
+    available,
+    hide_when_empty,
+    CASE WHEN
+        CURRENT_TIMESTAMP < discount_end THEN discounted_price END AS discounted_price,
+    CONCAT(web_group_name_1, ',', web_group_name_2, ',', web_group_name_3, ',', new_tag)    AS tags
 FROM Products pro
 --ORDER BY pro.sku
 ;
