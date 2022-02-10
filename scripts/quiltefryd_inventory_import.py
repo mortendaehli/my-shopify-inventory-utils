@@ -4,6 +4,7 @@ import os
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from time import sleep
+
 import numpy as np
 import pandas as pd
 import shopify
@@ -14,15 +15,15 @@ import myshopify
 from myshopify import dto
 from myshopify.shopify.inventory import (
     add_images_to_product,
+    add_metafields,
     create_product,
     create_variant,
+    delete_product,
+    delete_variant,
     get_all_shopify_resources,
     update_inventory,
-    update_variant,
     update_product,
-delete_product,
-delete_variant,
-add_metafields
+    update_variant,
 )
 
 logging.getLogger("pyactiveresource").setLevel("WARNING")
@@ -153,29 +154,34 @@ if __name__ == "__main__":
                 available=int(np.nan_to_num(product_row["available"], nan=0)),
             )
 
-            images = add_images_to_product(product=product, image_list=[Image.open(io.BytesIO(product_row.images))] if product_row.images else [])
+            images = add_images_to_product(
+                product=product, image_list=[Image.open(io.BytesIO(product_row.images))] if product_row.images else []
+            )
             metafields = list()
             if product_row["price_unit"]:
 
-                metafields.append(dto.shopify.Metafield(
+                metafields.append(
+                    dto.shopify.Metafield(
+                        owner_id=product.id,
+                        owner_resource="product",
+                        key="price_unit",
+                        namespace="inventory",
+                        value=product_row["price_unit"],
+                        type=dto.types.ShopifyType.single_line_text_field,
+                        value_type=dto.types.ShopifyValueType.string,
+                    )
+                )
+
+            metafields.append(
+                dto.shopify.Metafield(
                     owner_id=product.id,
                     owner_resource="product",
-                    key="price_unit",
+                    key="minimum_order_quantity",
                     namespace="inventory",
-                    value=product_row["price_unit"],
-                    type=dto.types.ShopifyType.single_line_text_field,
-                    value_type=dto.types.ShopifyValueType.string
-                ))
-
-            metafields.append(dto.shopify.Metafield(
-                owner_id=product.id,
-                owner_resource="product",
-                key="minimum_order_quantity",
-                namespace="inventory",
-                value=3 if product_row["price_unit"] == "desimeter" else 0,
-                type=dto.types.ShopifyType.number_integer,
-                value_type=dto.types.ShopifyValueType.integer
-            )
+                    value=3 if product_row["price_unit"] == "desimeter" else 0,
+                    type=dto.types.ShopifyType.number_integer,
+                    value_type=dto.types.ShopifyValueType.integer,
+                )
             )
 
             add_metafields(metafields_dto=metafields, resource=product)

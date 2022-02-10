@@ -2,12 +2,14 @@ import logging
 from io import BytesIO
 from typing import List, Union
 from urllib.error import HTTPError
+
 import shopify
 from PIL import Image
+from pyactiveresource.connection import ServerError
 from retry import retry
+
 from myshopify import dto
 from myshopify.utils import expand_to_square
-from pyactiveresource.connection import ServerError
 
 logger = logging.getLogger(__name__)
 
@@ -35,9 +37,7 @@ def get_number_from_string(x):
 
 
 @retry((HTTPError, ServerError), tries=100, delay=5)
-def create_product(
-    product_dto: dto.shopify.Product
-) -> shopify.Product:
+def create_product(product_dto: dto.shopify.Product) -> shopify.Product:
     # Creating the product.
     product = product_dto.to_shopify_object()
     product.save()
@@ -86,9 +86,7 @@ def add_images_to_product(
 
 
 @retry((HTTPError, ServerError), tries=100, delay=5)
-def update_product(
-    product_update_dto: dto.shopify.Product
-) -> shopify.Product:
+def update_product(product_update_dto: dto.shopify.Product) -> shopify.Product:
     assert product_update_dto.id is not None
     product: shopify.Product = shopify.Product.find(id_=product_update_dto.id)
     product_update_dto.to_shopify_object(existing_object=product)
@@ -100,9 +98,7 @@ def update_product(
 
 
 @retry((HTTPError, ServerError), tries=100, delay=5)
-def update_variant(
-    variant_update_dto: dto.shopify.ProductVariant
-) -> shopify.Variant:
+def update_variant(variant_update_dto: dto.shopify.ProductVariant) -> shopify.Variant:
     assert variant_update_dto.id is not None
     variant: shopify.Variant = shopify.Variant.find(id_=variant_update_dto.id)
     variant_update_dto.to_shopify_object(existing_object=variant)
@@ -113,7 +109,9 @@ def update_variant(
 
 
 @retry((HTTPError, ServerError), tries=100, delay=5)
-def add_metafields(metafields_dto: List[dto.shopify.Metafield], resource: Union[shopify.Product, shopify.Variant]) -> None:
+def add_metafields(
+    metafields_dto: List[dto.shopify.Metafield], resource: Union[shopify.Product, shopify.Variant]
+) -> None:
     for metafield_dto in metafields_dto:
         metafield = metafield_dto.to_shopify_object()
         metafield.save()

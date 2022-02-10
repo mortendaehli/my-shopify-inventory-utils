@@ -1,9 +1,10 @@
 from datetime import datetime
 from typing import Optional, Union
+
 import shopify
 from pydantic import BaseModel
 
-from myshopify.dto.types import ShopifyValueType, ShopifyType
+from myshopify.dto.types import ShopifyType, ShopifyValueType
 
 
 class Metafield(BaseModel):
