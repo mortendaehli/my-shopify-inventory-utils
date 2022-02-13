@@ -1,6 +1,6 @@
 import logging
 from io import BytesIO
-from typing import List, Union
+from typing import Dict, List, Union
 from urllib.error import HTTPError
 
 import shopify
@@ -38,7 +38,7 @@ def get_number_from_string(x):
 
 @retry((HTTPError, ServerError), tries=100, delay=5)
 def create_product(product_dto: dto.shopify.Product) -> shopify.Product:
-    # Creating the product.
+    logger.info(f"Creating Product: {product_dto.title}")
     product = product_dto.to_shopify_object()
     product.save()
     if product.errors.errors:
@@ -48,7 +48,7 @@ def create_product(product_dto: dto.shopify.Product) -> shopify.Product:
 
 @retry((HTTPError, ServerError), tries=100, delay=5)
 def create_variant(variant_dto: dto.shopify.ProductVariant) -> shopify.Variant:
-    # Creating the product.
+    logger.info(f"Creating Variant: {variant_dto.title} - sku: {variant_dto.sku}")
     variant = variant_dto.to_shopify_object()
     variant.save()
     if variant.errors.errors:
@@ -63,6 +63,7 @@ def add_images_to_product(
     """
     Note! We are resizing all images to squares of (2048, 2048).
     """
+    logger.info(f"Adding images to Product: {product.title}")
     assert product.id is not None
     images = []
     for i, image in enumerate(image_list):
@@ -86,10 +87,10 @@ def add_images_to_product(
 
 
 @retry((HTTPError, ServerError), tries=100, delay=5)
-def update_product(product_update_dto: dto.shopify.Product) -> shopify.Product:
-    assert product_update_dto.id is not None
-    product: shopify.Product = shopify.Product.find(id_=product_update_dto.id)
-    product_update_dto.to_shopify_object(existing_object=product)
+def update_product(product_update_dto: dto.shopify.Product, shopify_product: shopify.Product) -> shopify.Product:
+    logger.info(f"Updating Product: {shopify_product.title}")
+    assert product_update_dto.id == shopify_product.id
+    product = product_update_dto.to_shopify_object(existing_object=shopify_product)
     if product.errors.errors:
         raise ValueError(product.errors.errors)
     product.save()
@@ -98,10 +99,10 @@ def update_product(product_update_dto: dto.shopify.Product) -> shopify.Product:
 
 
 @retry((HTTPError, ServerError), tries=100, delay=5)
-def update_variant(variant_update_dto: dto.shopify.ProductVariant) -> shopify.Variant:
-    assert variant_update_dto.id is not None
-    variant: shopify.Variant = shopify.Variant.find(id_=variant_update_dto.id)
-    variant_update_dto.to_shopify_object(existing_object=variant)
+def update_variant(variant_update_dto: dto.shopify.ProductVariant, shopify_variant: shopify.Variant) -> shopify.Variant:
+    logger.info(f"Updating Variant sku: {shopify_variant.sku}")
+    assert variant_update_dto.id == shopify_variant.id
+    variant = variant_update_dto.to_shopify_object(existing_object=shopify_variant)
     if variant.errors.errors:
         raise ValueError(variant.errors.errors)
     variant.save()
@@ -138,3 +139,29 @@ def delete_variant(variant: shopify.Variant) -> None:
 @retry((HTTPError, ServerError), tries=100, delay=5)
 def delete_product(product: shopify.Product) -> None:
     product.destroy()
+
+
+def generate_product_metafield(data: Dict[str, Union[str, int, float]], product_id: int) -> List[dto.shopify.Metafield]:
+    metafields = list()
+    for key, value in data.items():
+        if isinstance(value, str):
+            dtype = dto.types.ShopifyType.single_line_text_field
+            value_type = dto.types.ShopifyValueType.string
+        elif isinstance(value, int):
+            dtype = dto.types.ShopifyType.number_integer
+            value_type = dto.types.ShopifyValueType.integer
+        else:
+            raise NotImplementedError(f"Datatype {type(value)} has not been implemented for Metafields")
+        metafields.append(
+            dto.shopify.Metafield(
+                owner_id=product_id,
+                owner_resource="product",
+                key=key,
+                namespace="inventory",
+                value=value,
+                type=dtype,
+                value_type=value_type,
+            )
+        )
+
+    return metafields

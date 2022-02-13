@@ -10,7 +10,7 @@ from sqlalchemy import create_engine
 
 import myshopify
 
-logging_format = "%(asctime)s | %(levelname)-8s | %(name)s | [%(pathname)s:%(lineno)d] | %(message)s"
+logging_format = "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s"
 file_handler = RotatingFileHandler(Path(__file__).parent / ".log", maxBytes=1000, backupCount=0)
 stream_handler = logging.StreamHandler()
 logging.basicConfig(level=logging.DEBUG, handlers=[file_handler, stream_handler], format=logging_format)

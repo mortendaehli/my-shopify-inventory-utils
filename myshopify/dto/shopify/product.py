@@ -114,12 +114,12 @@ class Product(BaseModel):
     published_at: Optional[str] = None  # Read-oly
     updated_at: Optional[str] = None  # Read-only
 
-    title: str
+    title: Optional[str]
     body_html: Optional[str]
     images: Optional[List[Any]]
     options: Optional[Dict[str, Any]]
-    product_type: str
-    status: ShopifyProductStatus
+    product_type: Optional[str]
+    status: Optional[ShopifyProductStatus]
     tags: Optional[str]  # string "array" with comma
     vendor: Optional[str]
     variants: Optional[List[ProductVariant]] = None
