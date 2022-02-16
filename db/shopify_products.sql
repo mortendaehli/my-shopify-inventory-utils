@@ -8,6 +8,7 @@ WITH Products AS (
         -- ProductVariant
         art.ArticleNo                                                                   AS sku,
         art.ArticleID                                                                   AS source_id,
+        art.LastUpdate                                                                  AS source_updated,
         CASE
             WHEN grp.MainGroupID = 10 THEN CAST(art.SalesPrice AS FLOAT)
             ELSE CAST(art.SalesPrice AS FLOAT) * 1.25
@@ -26,7 +27,7 @@ WITH Products AS (
             WHEN grp.Name LIKE 'symaskiner' OR grp.Name LIKE N'symaskintilbehør' THEN 0
             ELSE 1
             END                                                                         AS hide_when_empty,
-        CASE WHEN art.OfferPrice > 0 THEN art.OfferPrice END                            AS discounted_price,
+        CASE WHEN art.OfferPrice > 0 THEN IIF(grp.MainGroupID = 10, CAST(art.OfferPrice AS FLOAT), CAST(art.OfferPrice AS FLOAT) * 1.25) END                            AS discounted_price,
         art.StartOfferPrice                                                             AS discount_start,
         art.StopOfferPrice                                                              AS discount_end,
         CASE
@@ -46,10 +47,11 @@ WITH Products AS (
                 THEN 'Quilte-stoff'
             WHEN web1.Name LIKE N'mønster%' THEN N'Mønster'
             WHEN web2.Name LIKE N'%Nåler%' THEN N'Tilbehør'
+            WHEN web1.Name LIKE 'Diverse%' THEN N'Tilbehør'
             END                                                                         AS product_type,
         CASE
             WHEN web1.Name LIKE N'symaskintilbehør' AND (
-                        art.Name LIKE '%fot%' OR
+                        (art.Name LIKE '%fot%' AND art.Name NOT LIKE '%pedal%') OR
                         art.Name LIKE '%acufeed%' OR
                         art.Name LIKE '%apparat%' OR
                         art.Name LIKE N'%transportør%' OR
@@ -60,10 +62,6 @@ WITH Products AS (
                         art.ArticleID IN (54836, 54847, 54828)
                 )
                 THEN N'Trykkføtter'
-            WHEN web2.Name LIKE 'Norske design' OR (web1.Name LIKE N'mønster%' AND web2.Name LIKE '%norsk%') THEN 'Norsk design'
-            WHEN web2.Name LIKE 'Utenlandske design' OR (web1.Name LIKE N'mønster%' AND web2.Name LIKE '%utenland%') THEN 'Internasjonalt design'
-            WHEN web2.Name LIKE 'Norsk%' THEN 'Norsk'
-            WHEN web2.Name LIKE 'Utenlandske%' THEN 'Internasjonalt'
 
             -- Sewing accessories
             WHEN web2.Name LIKE 'Sakser' THEN 'Sakser'
@@ -79,6 +77,8 @@ WITH Products AS (
                  art.Name LIKE '%markeringspenn%' THEN 'Markeringspenn' -- ???
             WHEN web1.Name LIKE N'Tilbehør' AND art.Name LIKE '%strykejern%' THEN 'Strykejern'
             WHEN web2.Name LIKE N'trykte stoffer' THEN N'Trykte stoffer'
+            WHEN web2.Name LIKE '%broderi%' THEN 'Broderi'
+            WHEN web2.Name LIKE '%lim%' THEN 'Lim'
             --WHEN web2.Name LIKE N'Sytilbehør' THEN N'Sytilbehør'
 
             -- Fabric types
@@ -118,7 +118,7 @@ WITH Products AS (
             WHEN web1.Name LIKE N'Symaskiner%' AND (web2.Name LIKE '%overlock%' OR art.ArticleID IN (53133, 55014, 49352, 53132, 54812, 54813, 54814, 54815, 54210, 47285, 46825)) THEN 'Overlock'
             WHEN web1.Name LIKE N'Symaskiner%' AND (web2.Name LIKE '%elektronisk%' OR art.ArticleID IN (54172, 54203, 54204, 54205, 54186, 54201, 54199, 54200, 54175, 54180, 54202, 54179, 54181, 54207, 54182, 54206, 54191, 54176, 51734, 50601, 1034, 46799, 46797, 50605, 46669, 47284, 45414, 47090, 47089, 46914, 55897)) THEN 'Elektronisk'
             WHEN web1.Name LIKE N'Symaskiner%' AND (web2.Name LIKE '%mekanisk%' OR art.ArticleID IN (54183, 54198, 1012, 54165, 54163, 54164, 54162, 54159, 54160, 46867, 50604, 1072)) THEN 'Mekanisk'
-            WHEN web1.Name LIKE N'Symaskintilbehør' AND art.Name LIKE '%spole%' THEN N'Spole'
+            WHEN web1.Name LIKE N'Symaskintilbehør' AND art.Name LIKE '%spole%' AND NOT art.Name LIKE '%spoleholder%' THEN N'Spole'
             WHEN web1.Name LIKE N'Symaskintilbehør' THEN N'Diverse symaskintilbehør'
             END                                                                         AS product_subtype,
         CASE
@@ -202,6 +202,8 @@ WITH Products AS (
             WHEN art.Name LIKE N'%Fæbrik%' THEN N'Fæbrik'
             WHEN web3.Name LIKE N'%Peppa %' THEN 'Peppa Gris'
             WHEN web2.Name LIKE '%Layer Cake%' OR art.Name LIKE '%Layer Cake%' THEN 'Layer Cake'
+            WHEN web3.Name LIKE '%tynn%dukvatt%' THEN 'Tynn dukvatt'
+            WHEN web3.Name LIKE '%diverse%design%' THEN 'Diverse designere'
             END                                                                         AS product_subtype2,
         CASE
             WHEN web1.Name LIKE '%symaskin%' THEN NULL
@@ -239,64 +241,65 @@ WITH Products AS (
             END                                                                         AS 'product_color',
 
         CASE
-            WHEN COALESCE(web3.Name, web2.Name, web1.Name) LIKE 'Jaybird Quilt%' THEN 'Jaybird Quilts'
-            WHEN COALESCE(web3.Name, web2.Name, web1.Name) LIKE 'Lori Holt%' THEN 'Lori Holt'
-            WHEN COALESCE(web3.Name, web2.Name, web1.Name) LIKE 'Jelly Roll%' THEN 'Sweetwater'
-            WHEN COALESCE(web3.Name, web2.Name, web1.Name) LIKE 'Kaffe Fassett%' THEN 'Kaffe Fassett'
-            WHEN COALESCE(web3.Name, web2.Name, web1.Name) LIKE 'Cottage Garden Threads%' THEN 'Cottage Garden Threads'
-            WHEN COALESCE(web3.Name, web2.Name, web1.Name) LIKE 'Tim Holtz%' THEN 'Tim Holtz'
-            WHEN COALESCE(web3.Name, web2.Name, web1.Name) LIKE 'Sew Kind of Wonderful%' THEN 'Sew Kind of Wonderful'
-            WHEN COALESCE(web3.Name, web2.Name, web1.Name) LIKE 'Lynette Anderson%' THEN 'Lynette Anderson'
-            WHEN COALESCE(web3.Name, web2.Name, web1.Name) LIKE 'Tula Pink%' THEN 'Tula Pink'
-            WHEN COALESCE(web3.Name, web2.Name, web1.Name) LIKE 'Meags and Me%' THEN 'Meags and Me'
-            WHEN COALESCE(web3.Name, web2.Name, web1.Name) LIKE 'Alison Glass%' THEN 'Alison Glass'
-            WHEN COALESCE(web3.Name, web2.Name, web1.Name) LIKE 'Amy Bradley Designs%' THEN 'Amy Bradley Designs'
-            WHEN COALESCE(web3.Name, web2.Name, web1.Name) LIKE 'Anni Downs%' THEN 'Anni Downs'
-            WHEN COALESCE(web3.Name, web2.Name, web1.Name) LIKE 'Bird Brain%' THEN 'Bird Brain'
-            WHEN COALESCE(web3.Name, web2.Name, web1.Name) LIKE 'By Annie%' THEN 'By Annie'
-            WHEN COALESCE(web3.Name, web2.Name, web1.Name) LIKE 'Clairturpindesigns%' THEN 'Claire Turpin Designs'
-            WHEN COALESCE(web3.Name, web2.Name, web1.Name) LIKE 'Crab-Apple Hild Studio%' THEN 'Crabapple Hill Studio'
-            WHEN COALESCE(web3.Name, web2.Name, web1.Name) LIKE 'Elisabeth Hartmann%' THEN 'Elisabeth Hartmann'
-            WHEN COALESCE(web3.Name, web2.Name, web1.Name) LIKE 'Gail Pan Design%' THEN 'Gail Pan Design'
-            WHEN COALESCE(web3.Name, web2.Name, web1.Name) LIKE 'Jen Kingwell%' THEN 'Jen Kingwell'
-            WHEN COALESCE(web3.Name, web2.Name, web1.Name) LIKE 'Jennifer Sampou%' THEN 'Jennifer Sampou'
-            WHEN COALESCE(web3.Name, web2.Name, web1.Name) LIKE 'Laumdry Basket Quilts%' THEN 'Laumdry Basket Quilts'
-            WHEN COALESCE(web3.Name, web2.Name, web1.Name) LIKE 'Apliquick%' THEN 'Apliquick'
-            WHEN COALESCE(web3.Name, web2.Name, web1.Name) LIKE 'Laura Heine%' THEN 'Laura Heine'
-            WHEN COALESCE(web3.Name, web2.Name, web1.Name) LIKE 'Lazy Girl Design%' THEN 'Lazy Girl Design'
-            WHEN COALESCE(web3.Name, web2.Name, web1.Name) LIKE 'Leanne''s House%' THEN 'Leanne''s House'
-            WHEN COALESCE(web3.Name, web2.Name, web1.Name) LIKE 'Libs Elliot%' THEN 'Libs Elliot'
-            WHEN COALESCE(web3.Name, web2.Name, web1.Name) LIKE 'Monica Pool%' THEN 'Monica Pool'
-            WHEN COALESCE(web3.Name, web2.Name, web1.Name) LIKE 'Painted Pony''n Quilts%' THEN 'Painted Pony''n Quilts'
-            WHEN COALESCE(web3.Name, web2.Name, web1.Name) LIKE 'Sassafras Lane Design%' THEN 'Sassafras Lane Design'
-            WHEN COALESCE(web3.Name, web2.Name, web1.Name) LIKE 'Solbritt & Maria%' THEN 'Solbritt & Maria'
-            WHEN COALESCE(web3.Name, web2.Name, web1.Name) LIKE 'Studio Kat Designs%' THEN 'Studio Kat Designs'
-            WHEN COALESCE(web3.Name, web2.Name, web1.Name) LIKE 'Sue Daley%' THEN 'Sue Daley'
-            WHEN COALESCE(web3.Name, web2.Name, web1.Name) LIKE 'The Birdhouse%' THEN 'The Birdhouse'
-            WHEN COALESCE(web3.Name, web2.Name, web1.Name) LIKE 'The Pattern Basket%' THEN 'The Pattern Basket'
-            WHEN COALESCE(web3.Name, web2.Name, web1.Name) LIKE 'This & That%' THEN 'This & That'
-            WHEN COALESCE(web3.Name, web2.Name, web1.Name) LIKE 'Tyger & Ting%' THEN 'Tyger & Ting'
-            WHEN COALESCE(web3.Name, web2.Name, web1.Name) LIKE 'Zen Chic%' THEN 'Zen Chic'
-            WHEN COALESCE(web3.Name, web2.Name, web1.Name) LIKE 'Fragile%' THEN 'Zen Chic'
-            WHEN COALESCE(web3.Name, web2.Name, web1.Name) LIKE 'Layer Cake%' THEN 'Zen Chic'
-            WHEN COALESCE(web3.Name, web2.Name, web1.Name) LIKE 'Peppa Pig%' THEN 'Peppa Gris'
-            WHEN COALESCE(web3.Name, web2.Name, web1.Name) LIKE 'AnnaKa%' THEN 'AnnAKa'
-            WHEN COALESCE(web3.Name, web2.Name, web1.Name) LIKE 'Bente Malm%' THEN 'Bente Malm'
-            WHEN COALESCE(web3.Name, web2.Name, web1.Name) LIKE 'Ryum Quilt%' THEN 'Ryum Quilt'
-            WHEN COALESCE(web3.Name, web2.Name, web1.Name) LIKE 'Sewline%' THEN 'Sewline'
-            WHEN COALESCE(web3.Name, web2.Name, web1.Name) LIKE 'Minikrea%' THEN 'Minikrea'
-            WHEN COALESCE(web3.Name, web2.Name, web1.Name) LIKE 'Bente Tufte%' THEN 'Bente Tufte'
-            WHEN COALESCE(web3.Name, web2.Name, web1.Name) LIKE 'Judith Eknes%' THEN 'Judith Eknes'
-            WHEN COALESCE(web3.Name, web2.Name, web1.Name) LIKE 'Yoko Saito%' THEN 'Yoko Saito'
-            WHEN COALESCE(web3.Name, web2.Name, web1.Name) LIKE 'Tilda%' THEN 'Tilda'
-            WHEN COALESCE(web3.Name, web2.Name, web1.Name) LIKE 'Superior Threads%' THEN 'Superior Threads'
-            WHEN COALESCE(web3.Name, web2.Name, web1.Name) LIKE 'Anna Maria Horner%' THEN 'Anna Maria Horner'
-            WHEN COALESCE(web3.Name, web2.Name, web1.Name) LIKE 'Grunge%' THEN 'Basic Grey'
+            WHEN COALESCE(web3.Name, web2.Name) LIKE 'Jaybird Quilt%' THEN 'Jaybird Quilts'
+            WHEN COALESCE(web3.Name, web2.Name) LIKE 'Lori Holt%' THEN 'Lori Holt'
+            WHEN COALESCE(web3.Name, web2.Name) LIKE 'Jelly Roll%' THEN 'Sweetwater'
+            WHEN COALESCE(web3.Name, web2.Name) LIKE 'Kaffe Fassett%' THEN 'Free Spirit'
+            WHEN COALESCE(web3.Name, web2.Name) LIKE 'Cottage Garden Threads%' THEN 'Cottage Garden Threads'
+            WHEN COALESCE(web3.Name, web2.Name) LIKE 'Tim Holtz%' THEN 'Tim Holtz'
+            WHEN COALESCE(web3.Name, web2.Name) LIKE 'Sew Kind of Wonderful%' THEN 'Sew Kind of Wonderful'
+            WHEN COALESCE(web3.Name, web2.Name) LIKE 'Lynette Anderson%' THEN 'Lynette Anderson'
+            WHEN COALESCE(web3.Name, web2.Name) LIKE 'Tula Pink%' THEN 'Tula Pink'
+            WHEN COALESCE(web3.Name, web2.Name) LIKE 'Meags and Me%' THEN 'Meags and Me'
+            WHEN COALESCE(web3.Name, web2.Name) LIKE 'Alison Glass%' THEN 'Alison Glass'
+            WHEN COALESCE(web3.Name, web2.Name) LIKE 'Amy Bradley Designs%' THEN 'Amy Bradley Designs'
+            WHEN COALESCE(web3.Name, web2.Name) LIKE 'Anni Downs%' THEN 'Anni Downs'
+            WHEN COALESCE(web3.Name, web2.Name) LIKE 'Bird Brain%' THEN 'Bird Brain'
+            WHEN COALESCE(web3.Name, web2.Name) LIKE 'By Annie%' THEN 'By Annie'
+            WHEN COALESCE(web3.Name, web2.Name) LIKE 'Clairturpindesigns%' THEN 'Claire Turpin Designs'
+            WHEN COALESCE(web3.Name, web2.Name) LIKE 'Crab-Apple Hild Studio%' THEN 'Crabapple Hill Studio'
+            WHEN COALESCE(web3.Name, web2.Name) LIKE 'Elisabeth Hartmann%' THEN 'Elisabeth Hartmann'
+            WHEN COALESCE(web3.Name, web2.Name) LIKE 'Gail Pan Design%' THEN 'Gail Pan Design'
+            WHEN COALESCE(web3.Name, web2.Name) LIKE 'Jen Kingwell%' THEN 'Jen Kingwell'
+            WHEN COALESCE(web3.Name, web2.Name) LIKE 'Jennifer Sampou%' THEN 'Jennifer Sampou'
+            WHEN COALESCE(web3.Name, web2.Name) LIKE 'Laumdry Basket Quilts%' THEN 'Laundry Basket Quilts'
+            WHEN COALESCE(web3.Name, web2.Name) LIKE 'Apliquick%' THEN 'Apliquick'
+            WHEN COALESCE(web3.Name, web2.Name) LIKE 'Laura Heine%' THEN 'Laura Heine'
+            WHEN COALESCE(web3.Name, web2.Name) LIKE 'Lazy Girl Design%' THEN 'Lazy Girl Design'
+            WHEN COALESCE(web3.Name, web2.Name) LIKE 'Leanne''s House%' THEN 'Leanne''s House'
+            WHEN COALESCE(web3.Name, web2.Name) LIKE 'Libs Elliot%' THEN 'Libs Elliot'
+            WHEN COALESCE(web3.Name, web2.Name) LIKE 'Monica Pool%' THEN 'Monica Pool'
+            WHEN COALESCE(web3.Name, web2.Name) LIKE 'Painted Pony''n Quilts%' THEN 'Painted Pony''n Quilts'
+            WHEN COALESCE(web3.Name, web2.Name) LIKE 'Sassafras Lane Design%' THEN 'Sassafras Lane Design'
+            WHEN COALESCE(web3.Name, web2.Name) LIKE 'Solbritt & Maria%' THEN 'Solbritt & Maria'
+            WHEN COALESCE(web3.Name, web2.Name) LIKE 'Studio Kat Designs%' THEN 'Studio Kat Designs'
+            WHEN COALESCE(web3.Name, web2.Name) LIKE 'Sue Daley%' THEN 'Sue Daley'
+            WHEN COALESCE(web3.Name, web2.Name) LIKE 'The Birdhouse%' THEN 'The Birdhouse'
+            WHEN COALESCE(web3.Name, web2.Name) LIKE 'The Pattern Basket%' THEN 'The Pattern Basket'
+            WHEN COALESCE(web3.Name, web2.Name) LIKE 'This & That%' THEN 'This & That'
+            WHEN COALESCE(web3.Name, web2.Name) LIKE 'Tyger & Ting%' THEN 'Tyger & Ting'
+            WHEN COALESCE(web3.Name, web2.Name) LIKE 'Zen Chic%' THEN 'Zen Chic'
+            WHEN COALESCE(web3.Name, web2.Name) LIKE 'Fragile%' THEN 'Zen Chic'
+            WHEN COALESCE(web3.Name, web2.Name) LIKE 'Layer Cake%' THEN 'Zen Chic'
+            WHEN COALESCE(web3.Name, web2.Name) LIKE 'Peppa Pig%' THEN 'Peppa Gris'
+            WHEN COALESCE(web3.Name, web2.Name) LIKE 'AnnaKa%' THEN 'AnnAKa'
+            WHEN COALESCE(web3.Name, web2.Name) LIKE 'Bente Malm%' THEN 'Bente Malm'
+            WHEN COALESCE(web3.Name, web2.Name) LIKE 'Ryum Quilt%' THEN 'Ryum Quilt'
+            WHEN COALESCE(web3.Name, web2.Name) LIKE 'Sewline%' THEN 'Sewline'
+            WHEN COALESCE(web3.Name, web2.Name) LIKE 'Minikrea%' THEN 'Minikrea'
+            WHEN COALESCE(web3.Name, web2.Name) LIKE 'Bente Tufte%' THEN 'Bente Tufte'
+            WHEN COALESCE(web3.Name, web2.Name) LIKE 'Judith Eknes%' THEN 'Judith Eknes'
+            WHEN COALESCE(web3.Name, web2.Name) LIKE 'Yoko Saito%' THEN 'Yoko Saito'
+            WHEN COALESCE(web3.Name, web2.Name) LIKE 'Tilda%' THEN 'Tildas world'
+            WHEN COALESCE(web3.Name, web2.Name) LIKE 'Superior Threads%' THEN 'Superior Threads'
+            WHEN COALESCE(web3.Name, web2.Name) LIKE 'Anna Maria Horner%' THEN 'Anna Maria Horner'
+            WHEN COALESCE(web3.Name, web2.Name) LIKE 'Grunge%' THEN 'Basic Grey'
 
             WHEN art.Name LIKE '%janome%' OR art.Name LIKE '%jabome%' OR art.Name Like '%Janbome%' OR
                  art.Name LIKE '%Jasbome%' THEN 'Janome'
             WHEN REPLACE(art.Name, ' ', '') LIKE '%baby lock%' OR web2.Name LIKE 'baby%lock%' THEN 'Baby Lock'
             WHEN art.Name LIKE '%brother%' THEN 'Brother'
+            WHEN art.Name LIKE '%prym%' THEN 'Prym'
             WHEN sup.Name LIKE '%byannie%' THEN 'By Annie'
             WHEN sup.Name LIKE '%annaka%' THEN 'AnnAKa'
             WHEN art.Name LIKE '%guterman%' OR art.Name LIKE '%gutterman%' THEN N'Gütermann'
@@ -345,6 +348,7 @@ WITH Products AS (
 )
 SELECT pro.sku,
        source_id,
+       source_updated,
        title,
        CASE
            WHEN price_unit LIKE 'meter' THEN ROUND(CAST(price AS FLOAT) / 10.0, 1)
@@ -365,12 +369,14 @@ SELECT pro.sku,
        vendor,
        hide_when_empty,
        CASE
-           WHEN discount_start < CURRENT_TIMESTAMP AND CURRENT_TIMESTAMP < discount_end
-               THEN discounted_price ELSE NULL END                                                                           AS discounted_price,
+           WHEN discount_start < CURRENT_TIMESTAMP AND CURRENT_TIMESTAMP < discount_end AND discounted_price > 0
+               THEN IIF(price_unit LIKE 'meter', ROUND(CAST(discounted_price AS FLOAT) / 10.0, 1), discounted_price) END                                                                           AS discounted_price,
        CONCAT(product_type, ',', product_subtype, ',', product_subtype2, ',', product_color, ',', vendor, ',',
               new_tag)                                                                                             AS tags
 
 FROM Products pro
 WHERE NOT (price < 5 AND available < 1) AND source_id NOT IN (51701, 55014, 55897)
-ORDER BY Title ASC
+ORDER BY source_id  -- or, order by source_updated ASC
 ;
+
+-- Todo: Check status inactive vs. active in PCKasse...

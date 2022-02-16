@@ -12,6 +12,7 @@ services:
       - MSSQL_PID=Express
     volumes:
       - sql1data:/var/opt/mssql
+      - ./data/db:/data
     ports:
       - "1433:1433"
     expose:

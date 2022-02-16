@@ -6,13 +6,3 @@ ARG ACCEPT_EULA=Y
 
 USER root
 RUN mkdir /data
-COPY data/sql.bak /data/sql.bak
-
-# RUN chown -R mssql /data
-# RUN chown -R mssql /var/opt/mssql
-# USER mssql
-
-# RUN (/opt/mssql/bin/sqlservr --accept-eula & ) | grep -q "Starting database restore" \
-#     && /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P ${MSSQL_SA_PASSWORD} -i /src/restore.sql
-# -d master
-# RUN rm /src/sql.bak && rm /src/restore.sql

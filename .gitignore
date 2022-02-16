@@ -139,3 +139,5 @@ dmypy.json
 *.xlsm
 
 data/
+
+*/.DS_Store

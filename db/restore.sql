@@ -1,4 +1,6 @@
 -- Simple restoration of a PCKasse MS SQL Express Server
+USE MASTER;
+
 RESTORE FILELISTONLY FROM DISK = '/data/sql.bak';
 
 RESTORE DATABASE PCKasse FROM DISK = '/data/sql.bak'WITH

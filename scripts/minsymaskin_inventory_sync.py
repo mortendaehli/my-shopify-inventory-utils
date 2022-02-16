@@ -26,7 +26,6 @@ from myshopify.shopify.inventory import (
     create_variant,
     generate_product_metafield,
     get_all_shopify_resources,
-    # update_inventory,
     update_product,
     update_variant,
 )
@@ -50,16 +49,10 @@ if __name__ == "__main__":
     df = pd.read_pickle(Path(myshopify.__file__).parent.parent / "data" / "shopify_products_export.pickle")
 
     df = df.loc[
-        df["product_type"].map(
-            lambda x: x in ["Symaskiner", "Tilbehør", "Symaskintilbehør", "Bekledningsstoff"]
-        )
+        df["product_type"].map(lambda x: x in ["Symaskiner", "Tilbehør", "Symaskintilbehør", "Bekledningsstoff"])
     ]
 
-    df = df.loc[
-        df["product_subtype"].map(
-            lambda x: x not in ["Maler", "Gaver, esker og bokser"]
-        )
-    ]
+    df = df.loc[df["product_subtype"].map(lambda x: x not in ["Maler", "Gaver, esker og bokser"])]
 
     shop_url = f"https://{key}:{pwd}@{name}.myshopify.com/admin"
     shopify.ShopifyResource.set_site(value=shop_url)  # noqa
