@@ -51,7 +51,7 @@ if __name__ == "__main__":
     timestamp, filename = sorted(list(zip(datelist, filelist)), key=lambda x: x[0])[-1]
     print(f"Downloading {filename}")
     try:
-        ftp.retrbinary("RETR %s" % filename, open(DATA_PATH / "backup.zip", "wb").write)
+        ftp.retrbinary("RETR %s" % filename, open(DATA_PATH / filename, "wb").write)
     except error_perm:
         print("Error: cannot read file %s" % filename)
         os.unlink(filename)
@@ -60,14 +60,4 @@ if __name__ == "__main__":
 
     ftp.quit()
 
-    shutil.unpack_archive(DATA_PATH / "backup.zip", extract_dir=DATA_PATH)
-
-    files_in_target = os.listdir(DATA_PATH)
-    bak_file = [x for x in os.listdir(DATA_PATH) if x.endswith(".bak")][0]
-    os.rename(DATA_PATH / bak_file, DATA_PATH / "sql.bak")
-
-    for file in files_in_target:
-        try:
-            os.remove(DATA_PATH / file)
-        except FileNotFoundError:
-            pass
+    shutil.unpack_archive(DATA_PATH / filename, extract_dir=DATA_PATH)
