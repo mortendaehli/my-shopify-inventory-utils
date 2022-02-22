@@ -55,6 +55,7 @@ if __name__ == "__main__":
     shopify.ShopifyResource.set_site(value=shop_url)  # noqa
 
     delete_all = False
+    update_metafields = True
     if delete_all:
         products = get_all_shopify_resources(shopify.Product)
         variants = get_all_shopify_resources(shopify.Variant)
@@ -79,11 +80,23 @@ if __name__ == "__main__":
 
             product_dto = dto.shopify.Product(
                 id=product.id,
-                product_type=product_row["product_type"],
+                product_type=product_row["product_category"],
                 tags=product_row["tags"].strip(","),
                 vendor=product_row["vendor"],
             )
             update_product(product_update_dto=product_dto, shopify_product=product)
+
+            if update_metafields:
+                metafields_data = {
+                    "price_unit": product_row["price_unit"],
+                    "minimum_order_quantity": 3 if product_row["price_unit"] == "desimeter" else 0,
+                }
+
+                for metafield in product.metafields():
+                    metafield.value = metafields_data[metafield.attributes["key"]]
+                    metafield.save()
+                    sleep(0.25)
+
             # Todo: Update metafields
             for variant in product.variants:
                 skus.append(variant.sku)
@@ -132,7 +145,7 @@ if __name__ == "__main__":
             new_product = dto.shopify.Product(
                 title=product_row["title"],
                 body_html=" ".join(["<p>" + x.strip() + "</p>\n" for x in product_row["body_html"].split("\n")]),
-                product_type=product_row["product_type"],
+                product_type=product_row["product_category"],
                 status=new_product_status,
                 tags=product_row["tags"].strip(","),
                 vendor=product_row["vendor"],
@@ -168,11 +181,11 @@ if __name__ == "__main__":
                 product=product, image_list=[Image.open(io.BytesIO(product_row.images))] if product_row.images else []
             )
 
-            data = {
+            metafields_data = {
                 "price_unit": product_row["price_unit"],
                 "minimum_order_quantity": 3 if product_row["price_unit"] == "desimeter" else 0,
             }
-            metafields = generate_product_metafield(data=data, product_id=product.id)
+            metafields = generate_product_metafield(data=metafields_data, product_id=product.id)
 
             add_metafields(metafields_dto=metafields, resource=product)
 

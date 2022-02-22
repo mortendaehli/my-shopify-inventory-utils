@@ -37,3 +37,6 @@ LEFT JOIN Suppliers sup ON sup.SupplierID = art.SupplierID
 LEFT JOIN Manufacturers man ON man.ManufacturerID = art.ManufacturerID
 LEFT JOIN EanNos ean ON ean.ArticleID = art.ArticleId
 ;
+
+
+SELECT TOP(200) * FROM Articles ORDER BY ArticleID DESC

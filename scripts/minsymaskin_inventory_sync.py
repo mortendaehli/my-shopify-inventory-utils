@@ -69,7 +69,7 @@ if __name__ == "__main__":
 
             product_dto = dto.shopify.Product(
                 id=product.id,
-                product_type=product_row["product_type"],
+                product_type=product_row["product_category"],
                 vendor=product_row["vendor"],
             )
             update_product(product_update_dto=product_dto, shopify_product=product)
@@ -120,7 +120,7 @@ if __name__ == "__main__":
             new_product = dto.shopify.Product(
                 title=product_row["title"],
                 body_html=" ".join(["<p>" + x.strip() + "</p>\n" for x in product_row["body_html"].split("\n")]),
-                product_type=product_row["product_type"],
+                product_type=product_row["product_category"],
                 status=new_product_status,
                 tags=product_row["tags"].strip(","),
                 vendor=product_row["vendor"],

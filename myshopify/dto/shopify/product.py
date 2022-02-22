@@ -58,7 +58,7 @@ class ProductVariant(BaseModel):
     @classmethod
     def from_shopify_object(cls, shopify_obj: shopify.Variant):
         data = {}
-        for field in cls.fields:
+        for field in cls.__fields__:
             data[field] = shopify_obj.__getattribute__(field)
         return cls(**data)
 
