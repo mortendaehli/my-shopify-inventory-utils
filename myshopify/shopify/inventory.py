@@ -21,14 +21,18 @@ def _image_to_bytes(image: Image, image_format: str) -> bytes:
 
 
 def get_all_shopify_resources(resource_type, **kwargs):
+    logger.info(f"Reading all resources of type: {type(resource_type)}")
     resource_count = resource_type.count(**kwargs)
     resources = []
+    i = 1
     if resource_count > 0:
         page = resource_type.find(**kwargs)
         resources.extend(page)
         while page.has_next_page():
+            f"Reading resource page: {i}/{resource_count}"
             page = page.next_page()
             resources.extend(page)
+            i += 1
     return resources
 
 
@@ -36,7 +40,7 @@ def get_number_from_string(x):
     return float(x.__repr__().replace(",", ".").replace(r"\xa0", "").replace("'", ""))
 
 
-@retry((HTTPError, ServerError), tries=100, delay=5)
+@retry((HTTPError, ServerError), tries=10, delay=10)
 def create_product(product_dto: dto.shopify.Product) -> shopify.Product:
     logger.info(f"Creating Product: {product_dto.title}")
     product = product_dto.to_shopify_object()
@@ -46,7 +50,7 @@ def create_product(product_dto: dto.shopify.Product) -> shopify.Product:
     return product
 
 
-@retry((HTTPError, ServerError), tries=100, delay=5)
+@retry((HTTPError, ServerError), tries=10, delay=10)
 def create_variant(variant_dto: dto.shopify.ProductVariant) -> shopify.Variant:
     logger.info(f"Creating Variant: {variant_dto.title} - sku: {variant_dto.sku}")
     variant = variant_dto.to_shopify_object()
@@ -56,7 +60,7 @@ def create_variant(variant_dto: dto.shopify.ProductVariant) -> shopify.Variant:
     return variant
 
 
-@retry((HTTPError, ServerError), tries=100, delay=5)
+@retry((HTTPError, ServerError), tries=10, delay=10)
 def add_images_to_product(
     product: shopify.Product, image_list: List[Image.Image], make_square: bool = True, resize: bool = True
 ) -> List[shopify.Image]:
@@ -86,7 +90,7 @@ def add_images_to_product(
     return images
 
 
-@retry((HTTPError, ServerError), tries=100, delay=5)
+@retry((HTTPError, ServerError), tries=10, delay=10)
 def update_product(product_update_dto: dto.shopify.Product, shopify_product: shopify.Product) -> shopify.Product:
     logger.info(f"Updating Product: {shopify_product.title}")
     assert product_update_dto.id == shopify_product.id
@@ -98,7 +102,7 @@ def update_product(product_update_dto: dto.shopify.Product, shopify_product: sho
     return product
 
 
-@retry((HTTPError, ServerError), tries=100, delay=5)
+@retry((HTTPError, ServerError), tries=10, delay=10)
 def update_variant(variant_update_dto: dto.shopify.ProductVariant, shopify_variant: shopify.Variant) -> shopify.Variant:
     logger.info(f"Updating Variant sku: {shopify_variant.sku}")
     assert variant_update_dto.id == shopify_variant.id
@@ -109,19 +113,22 @@ def update_variant(variant_update_dto: dto.shopify.ProductVariant, shopify_varia
     return variant
 
 
-@retry((HTTPError, ServerError), tries=100, delay=5)
-def add_metafields(
-    metafields_dto: List[dto.shopify.Metafield], resource: Union[shopify.Product, shopify.Variant]
-) -> None:
+def add_metafields(product: shopify.Product, metafields_dto: List[dto.shopify.Metafield]) -> None:
+    logger.info(f"Adding Product Metafields: {product.title}")
     for metafield_dto in metafields_dto:
-        metafield = metafield_dto.to_shopify_object()
-        metafield.save()
-        if metafield.errors.errors:
-            raise ValueError(metafield.errors.errors)
-        resource.add_metafield(metafield=metafield)
+        add_metafield(product=product, metafield_dto=metafield_dto)
 
 
-@retry((HTTPError, ServerError), tries=100, delay=5)
+@retry((HTTPError, ServerError), tries=10, delay=10)
+def add_metafield(product: shopify.Product, metafield_dto: dto.shopify.Metafield) -> None:
+    metafield = metafield_dto.to_shopify_object()
+    metafield.save()
+    if metafield.errors.errors:
+        raise ValueError(metafield.errors.errors)
+    product.add_metafield(metafield=metafield)
+
+
+@retry((HTTPError, ServerError), tries=10, delay=10)
 def update_inventory(inventory_level_dto: dto.shopify.InventoryLevel) -> None:
     assert inventory_level_dto.inventory_item_id is not None
     shopify.InventoryLevel.set(
@@ -131,17 +138,34 @@ def update_inventory(inventory_level_dto: dto.shopify.InventoryLevel) -> None:
     )
 
 
-@retry((HTTPError, ServerError), tries=100, delay=5)
+@retry((HTTPError, ServerError), tries=10, delay=10)
 def delete_variant(variant: shopify.Variant) -> None:
     variant.destroy()
 
 
-@retry((HTTPError, ServerError), tries=100, delay=5)
+@retry((HTTPError, ServerError), tries=10, delay=10)
 def delete_product(product: shopify.Product) -> None:
     product.destroy()
 
 
-def generate_product_metafield(data: Dict[str, Union[str, int, float]], product_id: int) -> List[dto.shopify.Metafield]:
+@retry((HTTPError, ServerError), tries=10, delay=10)
+def update_product_metafield(product: shopify.Product, data: Dict[str, str]) -> List[shopify.Metafield]:
+    metafields = product.metafields()
+    metafields_keys = [field.attributes["key"] for field in metafields]
+    for metafield in metafields:
+        if metafield.attributes["key"] in data.keys():
+            metafield.value = data[metafield.attributes["key"]]
+            metafield.save()
+    for key, value in data.items():
+        if key not in metafields_keys:
+            metafield_dto = generate_product_metafield(key=key, value=value, product_id=product.id)
+            add_metafield(product=product, metafield_dto=metafield_dto)
+    return metafields
+
+
+def generate_product_metafields(
+    data: Dict[str, Union[str, int, float]], product_id: int
+) -> List[dto.shopify.Metafield]:
     metafields = list()
     for key, value in data.items():
         if isinstance(value, str):
@@ -165,3 +189,23 @@ def generate_product_metafield(data: Dict[str, Union[str, int, float]], product_
         )
 
     return metafields
+
+
+def generate_product_metafield(key: str, value: Union[str, int, float], product_id: int) -> dto.shopify.Metafield:
+    if isinstance(value, str):
+        dtype = dto.types.ShopifyType.single_line_text_field
+        value_type = dto.types.ShopifyValueType.string
+    elif isinstance(value, int):
+        dtype = dto.types.ShopifyType.number_integer
+        value_type = dto.types.ShopifyValueType.integer
+    else:
+        raise NotImplementedError(f"Datatype {type(value)} has not been implemented for Metafields")
+    return dto.shopify.Metafield(
+        owner_id=product_id,
+        owner_resource="product",
+        key=key,
+        namespace="inventory",
+        value=value,
+        type=dtype,
+        value_type=value_type,
+    )

@@ -1,13 +1,14 @@
 import logging
 import os
+import shutil
 from datetime import datetime
 from ftplib import FTP, error_perm
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
-import shutil
-import myshopify
 
 from dotenv import load_dotenv
+
+import myshopify
 
 logging_format = "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s"
 file_handler = RotatingFileHandler(Path(__file__).parent / ".log", maxBytes=1000, backupCount=0)

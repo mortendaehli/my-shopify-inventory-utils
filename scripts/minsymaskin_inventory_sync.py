@@ -4,12 +4,14 @@ import os
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from time import sleep
+from typing import Dict, List, Optional, Union
 
 import numpy as np
 import pandas as pd
 import shopify
 from dotenv import load_dotenv
 from PIL import Image
+from pydantic import BaseSettings
 
 import myshopify
 from myshopify import dto
@@ -24,11 +26,17 @@ from myshopify.shopify.inventory import (
     add_metafields,
     create_product,
     create_variant,
-    generate_product_metafield,
+    delete_product,
+    delete_variant,
+    generate_product_metafields,
     get_all_shopify_resources,
+    update_inventory,
     update_product,
+    update_product_metafield,
     update_variant,
 )
+
+load_dotenv()
 
 logging.getLogger("pyactiveresource").setLevel("WARNING")
 logging.getLogger("PIL").setLevel("WARNING")
@@ -40,22 +48,77 @@ logging.basicConfig(level=logging.DEBUG, handlers=[file_handler, stream_handler]
 logger = logging.getLogger(__name__)
 
 
+class Settings(BaseSettings):
+    delete_all: bool = False
+    add_metadata: bool = True
+    update_metadata: bool = True
+    shopify_key: str = os.getenv("MINSYMASKIN_SHOPIFY_KEY")
+    shopify_password: str = os.getenv("MINSYMASKIN_SHOPIFY_PWD")
+    shopify_shop_name: str = os.getenv("MINSYMASKIN_SHOPIFY_NAME")
+    allowed_product_categories: Optional[list[str]] = None
+    allowed_product_group1: Optional[List[str]] = [
+        "Bekledningstoff",
+        "Bekledningsmønster",
+        "Glidelås",
+        "Merkepenn",
+        "Linjal",
+        "Sakser",
+        "Nåler",
+        "skjærekniver",
+        "skjærematter",
+        "Vesketilbehør",
+        "Lampe",
+        "Strykejern",
+        "Diverse",
+        "Symaskintilbehør",
+        "Symaskiner",
+        "Broderigarn",
+        "Tråd",
+    ]
+
+
+def _get_metafield_data(row: pd.Series) -> Dict[str, Union[str, int]]:
+    return {
+        "price_unit": row["price_unit"],
+        "minimum_order_quantity": 3 if row["price_unit"] == "desimeter" else 0,
+        "product_category": row["product_category"] if row["product_category"] else "",
+        "product_group1": row["product_group1"] if row["product_group1"] else "",
+        "product_group2": row["product_group2"] if row["product_group2"] else "",
+        "product_group3": row["product_group3"] if row["product_group3"] else "",
+        "product_color": row["product_color"] if row["product_color"] else "",
+        "vendor": row["vendor"] if row["vendor"] else "",
+        "designer": row["designer"] if row["designer"] else "",
+    }
+
+
 if __name__ == "__main__":
-    load_dotenv()
-    key = os.getenv("MINSYMASKIN_SHOPIFY_KEY")
-    pwd = os.getenv("MINSYMASKIN_SHOPIFY_PWD")
-    name = os.getenv("MINSYMASKIN_SHOPIFY_NAME")
+    settings = Settings()
 
     df = pd.read_pickle(Path(myshopify.__file__).parent.parent / "data" / "shopify_products_export.pickle")
 
-    df = df.loc[
-        df["product_type"].map(lambda x: x in ["Symaskiner", "Tilbehør", "Symaskintilbehør", "Bekledningsstoff"])
-    ]
+    if settings.allowed_product_categories is not None:
+        df = df.loc[df["product_category"].map(lambda x: x in settings.allowed_product_categories)]
+    if settings.allowed_product_group1 is not None:
+        df = df.loc[df["product_group1"].map(lambda x: x in settings.allowed_product_group1)]
 
-    df = df.loc[df["product_subtype"].map(lambda x: x not in ["Maler", "Gaver, esker og bokser"])]
+    shop_url = (
+        f"https://{settings.shopify_key}:{settings.shopify_password}"
+        f"@{settings.shopify_shop_name}.myshopify.com/admin"
+    )
 
-    shop_url = f"https://{key}:{pwd}@{name}.myshopify.com/admin"
     shopify.ShopifyResource.set_site(value=shop_url)  # noqa
+
+    if settings.delete_all:
+        products = get_all_shopify_resources(shopify.Product)
+        variants = get_all_shopify_resources(shopify.Variant)
+        for variant in variants:
+            logger.info(f"Deleting Variant: {variant.title} - sku: {variant.sku}")
+            delete_variant(variant=variant)
+            sleep(0.25)
+        for product in products:
+            logger.info(f"Deleting Product: {product.title}")
+            delete_product(product=product)
+            sleep(0.25)
 
     # shop = shopify.Shop.current
     products = get_all_shopify_resources(shopify.Product)
@@ -70,9 +133,16 @@ if __name__ == "__main__":
             product_dto = dto.shopify.Product(
                 id=product.id,
                 product_type=product_row["product_category"],
+                tags=product_row["tags"].strip(","),
                 vendor=product_row["vendor"],
             )
             update_product(product_update_dto=product_dto, shopify_product=product)
+
+            if settings.update_metadata:
+                metafields_data = _get_metafield_data(row=product_row)
+                update_product_metafield(product=product, data=metafields_data)
+                sleep(0.5)
+
             for variant in product.variants:
                 skus.append(variant.sku)
                 if variant.sku in df["sku"].values:
@@ -104,10 +174,10 @@ if __name__ == "__main__":
                         available=int(np.nan_to_num(product_row["available"], nan=0)),
                     )
 
-                    # update_inventory(inventory_level_dto=inventory_level_update)
+                    update_inventory(inventory_level_dto=inventory_level_update)
                 else:
                     logger.warning(f"Not matched with POS: {product.title} - sku: {variant.sku}")
-            sleep(0.25)
+            sleep(0.5)
 
     logger.info("Importing products")
     for _, product_row in df.iterrows():
@@ -115,7 +185,7 @@ if __name__ == "__main__":
             if product_row["available"] < 1 and product_row["hide_when_empty"]:
                 continue
 
-            new_product_status = ShopifyProductStatus.DRAFT
+            new_product_status = ShopifyProductStatus.ACTIVE
 
             new_product = dto.shopify.Product(
                 title=product_row["title"],
@@ -156,15 +226,12 @@ if __name__ == "__main__":
                 product=product, image_list=[Image.open(io.BytesIO(product_row.images))] if product_row.images else []
             )
 
-            data = {
-                "price_unit": product_row["price_unit"],
-                "minimum_order_quantity": 3 if product_row["price_unit"] == "desimeter" else 0,
-            }
-            metafields = generate_product_metafield(data=data, product_id=product.id)
+            if settings.add_metadata:
+                metafields_data = _get_metafield_data(row=product_row)
+                metafields = generate_product_metafields(data=metafields_data, product_id=product.id)
+                add_metafields(metafields_dto=metafields, product=product)
 
-            add_metafields(metafields_dto=metafields, resource=product)
-
-            # update_inventory(inventory_level_dto=inventory_level_update)
-            sleep(0.25)
+            update_inventory(inventory_level_dto=inventory_level_update)
+            sleep(0.5)
 
     logger.info("Done!")

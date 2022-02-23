@@ -47,8 +47,8 @@ WITH Products AS (SELECT
                           WHEN web1.Name NOT LIKE 'symaskin%' AND (web1.Name LIKE 'Linjaler' OR web2.Name LIKE 'Linjaler') THEN 'Linjal'
                           WHEN web1.Name LIKE 'Saks%' OR web2.Name LIKE 'Saks%' THEN 'Sakser'
                           WHEN web1.Name NOT LIKE 'symaskin%' AND (web1.Name LIKE N'Nål%' OR web2.Name LIKE N'Nål%') THEN N'Nåler'
-                          WHEN web1.Name LIKE N'%skjærekniv%' OR web2.Name LIKE N'%skjærekniv%' THEN N'skjærekniver'
-                          WHEN web1.Name LIKE N'%skjærematte%' OR web2.Name LIKE N'%skjærematte%' THEN N'skjærematter'
+                          WHEN web1.Name LIKE N'%skjærekniv%' OR web2.Name LIKE N'%skjærekniv%' THEN N'Skjærekniver'
+                          WHEN web1.Name LIKE N'%skjærematte%' OR web2.Name LIKE N'%skjærematte%' THEN N'Skjærematter'
                           WHEN web1.Name LIKE N'Vesketilbehør' OR web2.Name LIKE N'Vesketilbehør' THEN N'Vesketilbehør'
                           WHEN web1.Name LIKE 'Lampe%' THEN 'Lampe'
                           WHEN web1.Name LIKE N'Strykejern%' OR (web1.Name LIKE N'Tilbehør' AND art.Name LIKE '%strykejern%') THEN 'Strykejern'
@@ -340,8 +340,9 @@ SELECT pro.sku,
        CONCAT(product_category, ',', product_group1, ',', product_group2, ',', product_group3, ',', product_color, ',', vendor, ',', designer, ',', new_tag)                                                                AS tags
 
 FROM Products pro
-WHERE NOT (price < 10 AND available <= 0)
-  AND NOT (product_category NOT LIKE '%stoff%' AND price_unit LIKE 'meter%')
-    AND source_id NOT IN (46798, 45413)
+WHERE
+      source_id NOT IN (46798, 45413)
+    AND NOT (price < 10 AND available <= 0)
+    AND NOT (product_category NOT LIKE '%stoff%' AND price_unit LIKE 'meter%')
 ORDER BY source_id -- or, order by source_updated ASC
 ;

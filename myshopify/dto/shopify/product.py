@@ -53,6 +53,9 @@ class ProductVariant(BaseModel):
         for field in self.__fields__:
             if self.__getattribute__(field) is not None:
                 obj.__setattr__(field, self.__getattribute__(field))
+            # Special handling of compare at price. If this is None and price is given, then set to None.
+            elif field == "compare_at_price" and self.__getattribute__("price") is not None:
+                obj.__setattr__(field, None)
         return obj
 
     @classmethod

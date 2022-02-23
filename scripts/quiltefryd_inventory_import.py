@@ -4,12 +4,14 @@ import os
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from time import sleep
+from typing import Dict, List, Optional, Union
 
 import numpy as np
 import pandas as pd
 import shopify
 from dotenv import load_dotenv
 from PIL import Image
+from pydantic import BaseSettings
 
 import myshopify
 from myshopify import dto
@@ -26,13 +28,15 @@ from myshopify.shopify.inventory import (
     create_variant,
     delete_product,
     delete_variant,
-    generate_product_metafield,
+    generate_product_metafields,
     get_all_shopify_resources,
     update_inventory,
     update_product,
+    update_product_metafield,
     update_variant,
 )
 
+load_dotenv()
 logging.getLogger("pyactiveresource").setLevel("WARNING")
 logging.getLogger("PIL").setLevel("WARNING")
 logging_format = "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s"
@@ -43,20 +47,50 @@ logging.basicConfig(level=logging.DEBUG, handlers=[file_handler, stream_handler]
 logger = logging.getLogger(__name__)
 
 
+class Settings(BaseSettings):
+    delete_all: bool = False
+    add_metadata: bool = True
+    update_metadata: bool = True
+    shopify_key: str = os.getenv("QUILTEFRYD_SHOPIFY_KEY")
+    shopify_password: str = os.getenv("QUILTEFRYD_SHOPIFY_PWD")
+    shopify_shop_name: str = os.getenv("QUILTEFRYD_SHOPIFY_NAME")
+    allowed_product_categories: Optional[list[str]] = None
+    allowed_product_group1: Optional[List[str]] = None
+
+
+def _get_metafield_data(row: pd.Series) -> Dict[str, Union[str, int]]:
+    data = {
+        "price_unit": row["price_unit"],
+        "minimum_order_quantity": 3 if row["price_unit"] == "desimeter" else 0,
+        "product_category": row["product_category"] if row["product_category"] else None,
+        "product_group1": row["product_group1"] if row["product_group1"] else None,
+        "product_group2": row["product_group2"] if row["product_group2"] else None,
+        "product_group3": row["product_group3"] if row["product_group3"] else None,
+        "product_color": row["product_color"] if row["product_color"] else None,
+        "vendor": row["vendor"] if row["vendor"] else None,
+        "designer": row["designer"] if row["designer"] else None,
+    }
+    return {k: v for (k, v) in data.items() if v is not None}
+
+
 if __name__ == "__main__":
-    load_dotenv()
-    key = os.getenv("QUILTEFRYD_SHOPIFY_KEY")
-    pwd = os.getenv("QUILTEFRYD_SHOPIFY_PWD")
-    name = os.getenv("QUILTEFRYD_SHOPIFY_NAME")
+    settings = Settings()
 
     df = pd.read_pickle(Path(myshopify.__file__).parent.parent / "data" / "shopify_products_export.pickle")
 
-    shop_url = f"https://{key}:{pwd}@{name}.myshopify.com/admin"
+    if settings.allowed_product_categories is not None:
+        df = df.loc[df["product_category"].map(lambda x: x in settings.allowed_product_categories)]
+    if settings.allowed_product_group1 is not None:
+        df = df.loc[df["product_group1"].map(lambda x: x in settings.allowed_product_group1)]
+
+    shop_url = (
+        f"https://{settings.shopify_key}:{settings.shopify_password}"
+        f"@{settings.shopify_shop_name}.myshopify.com/admin"
+    )
+
     shopify.ShopifyResource.set_site(value=shop_url)  # noqa
 
-    delete_all = False
-    update_metafields = True
-    if delete_all:
+    if settings.delete_all:
         products = get_all_shopify_resources(shopify.Product)
         variants = get_all_shopify_resources(shopify.Variant)
         for variant in variants:
@@ -86,18 +120,11 @@ if __name__ == "__main__":
             )
             update_product(product_update_dto=product_dto, shopify_product=product)
 
-            if update_metafields:
-                metafields_data = {
-                    "price_unit": product_row["price_unit"],
-                    "minimum_order_quantity": 3 if product_row["price_unit"] == "desimeter" else 0,
-                }
+            if settings.update_metadata:
+                metafields_data = _get_metafield_data(row=product_row)
+                update_product_metafield(product=product, data=metafields_data)
+                sleep(0.5)
 
-                for metafield in product.metafields():
-                    metafield.value = metafields_data[metafield.attributes["key"]]
-                    metafield.save()
-                    sleep(0.25)
-
-            # Todo: Update metafields
             for variant in product.variants:
                 skus.append(variant.sku)
                 if variant.sku in df["sku"].values:
@@ -132,7 +159,7 @@ if __name__ == "__main__":
                     update_inventory(inventory_level_dto=inventory_level_update)
                 else:
                     logger.warning(f"Not matched with POS: {product.title} - sku: {variant.sku}")
-            sleep(0.25)
+            sleep(0.5)
 
     logger.info("Importing products")
     for _, product_row in df.iterrows():
@@ -181,15 +208,12 @@ if __name__ == "__main__":
                 product=product, image_list=[Image.open(io.BytesIO(product_row.images))] if product_row.images else []
             )
 
-            metafields_data = {
-                "price_unit": product_row["price_unit"],
-                "minimum_order_quantity": 3 if product_row["price_unit"] == "desimeter" else 0,
-            }
-            metafields = generate_product_metafield(data=metafields_data, product_id=product.id)
-
-            add_metafields(metafields_dto=metafields, resource=product)
+            if settings.add_metadata:
+                metafields_data = _get_metafield_data(row=product_row)
+                metafields = generate_product_metafields(data=metafields_data, product_id=product.id)
+                add_metafields(metafields_dto=metafields, product=product)
 
             update_inventory(inventory_level_dto=inventory_level_update)
-            sleep(0.25)
+            sleep(0.5)
 
     logger.info("Done!")
