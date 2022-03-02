@@ -9,7 +9,7 @@ WITH Products AS (SELECT
                       art.ArticleID                                                                                                                                                   AS source_id,
                       art.LastUpdate                                                                                                                                                  AS source_updated,
                       IIF(grp.MainGroupID = 10, CAST(art.SalesPrice AS FLOAT), CAST(art.SalesPrice AS FLOAT) * 1.25)                                                                  AS price,
-                      LOWER(art.PriceUnit)                                                                                                                                            AS price_unit,
+                      LOWER(IIF(art.PriceUnit IS NULL or art.PriceUnit = '', 'stk', art.PriceUnit)   )                                                                                                                                         AS price_unit,
                       IIF(art.PriceUnit LIKE 'meter%', FLOOR((CAST(ISNULL(rec.C, 0) AS FLOAT) - CAST(ISNULL(sol.C, 0) AS FLOAT)) * 10.0), FLOOR(ISNULL(rec.C, 0) - ISNULL(sol.C, 0))) AS available,
                       IIF(grp.Name LIKE 'symaskiner' OR grp.Name LIKE N'symaskintilbehør', 0, 1)                                                                                      AS hide_when_empty,
                       CASE WHEN art.OfferPrice > 0 THEN IIF(grp.MainGroupID = 10, CAST(art.OfferPrice AS FLOAT), CAST(art.OfferPrice AS FLOAT) * 1.25) END                            AS discounted_price,
@@ -18,8 +18,8 @@ WITH Products AS (SELECT
 
                       -- Product category
                       CASE
-                          WHEN web1.Name LIKE 'Quiltestoff%' OR web1.Name LIKE 'Bekledningstoff%' OR web1.Name LIKE 'Jersey%' THEN 'Stoffer'
-                          WHEN web1.Name LIKE N'mønster%' OR web1.Name LIKE N'Quiltemønster%' OR web1.Name LIKE N'Bekledningsmønster%' THEN N'Mønster'
+                          WHEN web1.Name LIKE 'Quiltestoff%' OR web1.Name LIKE 'Bekledning%stoff%' OR web1.Name LIKE 'Jersey%' THEN 'Stoffer'
+                          WHEN web1.Name LIKE N'mønster%' OR web1.Name LIKE N'Quiltemønster%' OR web1.Name LIKE N'Bekledning%mønster%' THEN N'Mønster'
                           WHEN web1.Name LIKE N'Tilbehør%' OR web1.Name LIKE 'Lim%' OR web1.Name LIKE N'Glidelås%' OR web1.Name LIKE 'Merkepenn%' OR web1.Name LIKE 'Linjal%' OR web1.Name LIKE 'Saks%' OR web1.Name LIKE N'Nål%' OR
                                web1.Name LIKE N'Skjærekniv%' OR web1.Name LIKE N'skjærematte%' OR web1.Name LIKE N'Vesketilbehør%' OR web1.Name LIKE 'Lampe%' OR web1.Name LIKE 'Strykejern%' OR web1.Name LIKE 'paper%piecing%' OR
                                web1.Name LIKE 'Diverse%' THEN N'Tilbehør'
@@ -33,12 +33,11 @@ WITH Products AS (SELECT
                       CASE
                           -- Stoffer
                           WHEN web1.Name LIKE 'Quiltestoff%' OR (art.Name LIKE '%stoffpakke%' OR web2.Name LIKE '%stoffpakke%' OR web3.Name LIKE '%stoffpakke%') THEN 'Quiltestoffer'
-                          WHEN web1.Name LIKE 'Bekledningstoff%' OR (web1.Name LIKE 'Jersey%' OR art.Name LIKE '%french%terry%' OR art.Name LIKE '%Interlock%' OR art.Name LIKE '%viscose%')
-                              THEN 'Bekledningstoff'
+                          WHEN web1.Name LIKE 'Bekledning%stoff%' THEN 'Bekledningstoff'
 
                       -- Mønster
-                          WHEN web1.Name LIKE N'mønster%' OR web1.Name LIKE N'Quiltemønster%' THEN N'Quiltemønster'
-                          WHEN web1.Name LIKE N'Bekledningsmønster%' THEN N'Bekledningsmønster'
+                          WHEN web1.Name LIKE N'Quiltemønster%' THEN N'Quiltemønster'
+                          WHEN web1.Name LIKE N'%mønster%klær%' OR web1.Name LIKE N'Bekledning%mønster%' THEN N'Bekledningsmønster'
 
                           -- Tilbehør
                           WHEN web1.Name LIKE '%lim%' OR web2.Name LIKE '%lim%' THEN 'Lim'
@@ -151,8 +150,8 @@ WITH Products AS (SELECT
                           WHEN web1.Name LIKE N'Tråd%' THEN NULL
 
                           -- Stoff
-                          WHEN (web1.Name LIKE '%stoff%' OR web1.Name LIKE '%jersey%') AND (web2.Name LIKE 'Rib' OR web3.Name LIKE 'Rib') THEN 'Rib'
                           WHEN (web1.Name LIKE '%stoff%' OR web1.Name LIKE '%jersey%') AND (art.Name LIKE '%interlock%' OR web2.Name LIKE '%interlock%' OR web3.Name LIKE '%interlock%') THEN N'Interlock'
+                          WHEN (web1.Name LIKE '%stoff%' OR web1.Name LIKE '%jersey%') AND (web2.Name LIKE 'Rib' OR web3.Name LIKE 'Rib') THEN 'Rib'
                           WHEN (web1.Name LIKE '%stoff%' OR web1.Name LIKE '%jersey%') AND (web2.Name LIKE 'French Terry' OR web3.Name LIKE 'French Terry') THEN 'French Terry'
                           WHEN (web1.Name LIKE '%stoff%' OR web1.Name LIKE '%jersey%') AND (web2.Name LIKE 'Melert%' OR web3.Name LIKE 'Melert%' or art.Name LIKE '%melert%') THEN 'Melert'
                           WHEN (web1.Name LIKE '%stoff%' OR web1.Name LIKE '%jersey%') AND (web2.Name LIKE 'Essex%' OR web3.Name LIKE 'Essex%') THEN 'Essex'
@@ -217,17 +216,38 @@ WITH Products AS (SELECT
 
                       -- Designer or product series
                       CASE
-                          WHEN COALESCE(web3.Name, web2.Name) LIKE 'Anni Downs%' THEN 'Anni Downs'
-                          WHEN COALESCE(web3.Name, web2.Name) LIKE 'Lynette Anderson%' THEN 'Lynette Anderson'
-                          WHEN COALESCE(web3.Name, web2.Name) LIKE 'Jen Kingwell%' THEN 'Jen Kingwell'
-                          WHEN COALESCE(web3.Name, web2.Name) LIKE 'Tula Pink%' THEN 'Tula Pink'
-                          WHEN COALESCE(web3.Name, web2.Name) LIKE 'Kaffe Fassett%' THEN 'Free Spirit'
-                          WHEN COALESCE(web3.Name, web2.Name) LIKE 'Tim Holtz%' THEN 'Tim Holtz'
-                          WHEN COALESCE(web3.Name, web2.Name) LIKE 'Anna Maria Horner%' THEN 'Anna Maria Horner'
-                          WHEN COALESCE(web3.Name, web2.Name) LIKE 'Meags and Me%' THEN 'Meags and Me' END                                                                            AS 'designer',
+                          WHEN prl.Name IS NOT NULL THEN prl.Name
+                          -- Fixme: Add from Producer/brand below?
+                          END AS 'designer',
 
                       -- Producer / Brand
                       CASE
+                          WHEN man.Name IS NOT NULL THEN man.Name
+
+                          -- Fixme: Check all these below
+                          WHEN sup.Name LIKE '%byannie%' THEN 'By Annie'
+                          WHEN sup.Name LIKE '%annaka%' THEN 'AnnAKa'
+                          WHEN sup.Name LIKE 'Sew kind of wonderful' THEN 'Sew kind of wonderful'
+                          WHEN sup.Name LIKE 'Jen Kingwell' THEN 'Jen Kingwell'
+                          WHEN sup.Name LIKE 'Red Brolly' THEN 'Red Brolly'
+                          WHEN sup.Name LIKE 'Bente Tufte' THEN 'Bente Tufte'
+                          WHEN sup.Name LIKE 'Ryum Quilt' THEN 'Ryum Quilt'
+                          WHEN sup.Name LIKE N'FR Jørgensen' THEN N'FR Jørgensen'
+                          WHEN sup.Name LIKE 'Per Olden' THEN 'Per Olden'
+                          WHEN sup.Name LIKE 'Villy Jensen' THEN 'Villy Jensen'
+                          WHEN sup.Name LIKE 'Th. Ellebye' THEN 'Th. Ellebye'
+                          WHEN sup.Name LIKE 'Hjelmtvedt' THEN 'Hjelmtvedt'
+                          WHEN sup.Name LIKE 'Bente Malm' THEN 'Bente Malm'
+                          WHEN sup.Name LIKE 'Creative Grids' THEN 'Creative Grids'
+                          WHEN sup.Name LIKE 'Sue Daley' THEN 'Sue Daley'
+                          WHEN sup.Name LIKE 'Solbritt & Maria' THEN 'Solbritt & Maria'
+                          WHEN sup.Name LIKE 'Adlico' THEN 'Adlico'
+                          WHEN sup.Name LIKE 'Stof' THEN 'Stof'
+                          WHEN sup.Name LIKE 'Tyger & Ting' THEN 'Tyger & Ting'
+                          WHEN sup.Name LIKE 'Lynette Andersons%' THEN 'Lynette Andersons'
+                          WHEN sup.Name LIKE '%Berry Creations%' THEN 'Fign Berry Creations'
+                          WHEN sup.Name LIKE 'Hatched & Patched' THEN 'Hatched & Patched'
+
                           WHEN COALESCE(web3.Name, web2.Name) LIKE 'Jaybird Quilt%' THEN 'Jaybird Quilts'
                           WHEN COALESCE(web3.Name, web2.Name) LIKE 'Lori Holt%' THEN 'Lori Holt'
                           WHEN COALESCE(web3.Name, web2.Name) LIKE 'Jelly Roll%' THEN 'Sweetwater'
@@ -278,8 +298,6 @@ WITH Products AS (SELECT
                           WHEN REPLACE(art.Name, ' ', '') LIKE '%baby lock%' OR web2.Name LIKE 'baby%lock%' THEN 'Baby Lock'
                           WHEN art.Name LIKE '%brother%' THEN 'Brother'
                           WHEN art.Name LIKE '%prym%' THEN 'Prym'
-                          WHEN sup.Name LIKE '%byannie%' THEN 'By Annie'
-                          WHEN sup.Name LIKE '%annaka%' THEN 'AnnAKa'
                           WHEN art.Name LIKE '%guterman%' OR art.Name LIKE '%gutterman%' THEN N'Gütermann'
                           WHEN art.Name LIKE '%Organ needle%' THEN 'Organ Needles'
                           WHEN art.Name LIKE '%Avalana%' OR art.Name LIKE 'Nellies Shirtings%' OR art.Name LIKE 'Molly Roses%' THEN 'Stoffabrics'
@@ -302,8 +320,8 @@ WITH Products AS (SELECT
                           WHEN art.Name LIKE '%Makeover UK%' THEN 'Makower UK'
                           WHEN art.Name LIKE '%marcus%' AND art.Name LIKE '%fabrics%' THEN 'Marcus Brothers Fabrics'
                           WHEN art.Name LIKE '%Zen Chic%' THEN 'Zen Chic'
-                          WHEN art.Name LIKE N'%Fæbrik%' THEN N'Fæbrik' END                                                                                                           AS vendor,
-
+                          WHEN art.Name LIKE N'%Fæbrik%' THEN N'Fæbrik'
+                          END                                                                                                           AS vendor,
 
                       CASE WHEN CAST(CURRENT_TIMESTAMP - art.LastUpdate AS INT) < 120 AND (art.ArticleID > (SELECT MAX(ArticleID) FROM Articles) - 500) THEN 'Nyhet' END              AS new_tag
 
@@ -317,14 +335,16 @@ WITH Products AS (SELECT
                            LEFT JOIN Sold sol ON sol.aid = art.ArticleID
                            LEFT JOIN Received rec ON rec.aid = art.ArticleID AND (rec.C > 0 OR art.Picture IS NOT NULL)
                            LEFT JOIN Components com on art.ArticleID = com.ArticleID
+                           LEFT JOIN ProductLines prl ON prl.ProductLineID = art.ProductLineID
                   WHERE (art.VisibleOnWeb = 1 OR art.Name LIKE '%brother%' OR art.Name LIKE '%baby%lock%' OR art.Name LIKE '%janome%')
                     AND art.Picture IS NOT NULL)
+                    -- Fixme: Make Brother ++ visible on web.
 SELECT pro.sku,
        source_id,
        source_updated,
        title,
        CASE WHEN price_unit LIKE 'meter' THEN ROUND(CAST(price AS FLOAT) / 10.0, 1) WHEN price IS NULL THEN 0 ELSE price END                                                                                                AS price,
-       IIF(price_unit LIKE 'meter%', 'desimeter', price_unit)                                                                                                                                                               AS price_unit,
+       IIF(price_unit LIKE 'meter%', 'desimeter', ISNULL(price_unit, 'stk'))                                                                                                                                                               AS price_unit,
        IIF(NOT available > 0 OR available IS NULL, 0, available)                                                                                                                                                            AS available,
        body_html,
        images,
@@ -332,6 +352,8 @@ SELECT pro.sku,
        product_group1,
        product_group2,
        product_group3,
+       IIF(product_category LIKE '%stoff%', product_group2, NULL) AS fabric_material,
+       IIF(product_category LIKE '%stoff%', product_group3, NULL) AS fabric_type,
        product_color,
        vendor,
        designer,
@@ -341,8 +363,8 @@ SELECT pro.sku,
 
 FROM Products pro
 WHERE
-      source_id NOT IN (46798, 45413)
+      source_id NOT IN (46798, 45413, 49352)
     AND NOT (price < 10 AND available <= 0)
-    AND NOT (product_category NOT LIKE '%stoff%' AND price_unit LIKE 'meter%')
+
 ORDER BY source_id -- or, order by source_updated ASC
 ;

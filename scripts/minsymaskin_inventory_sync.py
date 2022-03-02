@@ -55,6 +55,7 @@ class Settings(BaseSettings):
     shopify_key: str = os.getenv("MINSYMASKIN_SHOPIFY_KEY")
     shopify_password: str = os.getenv("MINSYMASKIN_SHOPIFY_PWD")
     shopify_shop_name: str = os.getenv("MINSYMASKIN_SHOPIFY_NAME")
+    new_product_status: ShopifyProductStatus = ShopifyProductStatus.DRAFT
     allowed_product_categories: Optional[list[str]] = None
     allowed_product_group1: Optional[List[str]] = [
         "Bekledningstoff",
@@ -78,17 +79,20 @@ class Settings(BaseSettings):
 
 
 def _get_metafield_data(row: pd.Series) -> Dict[str, Union[str, int]]:
-    return {
+    data = {
         "price_unit": row["price_unit"],
         "minimum_order_quantity": 3 if row["price_unit"] == "desimeter" else 0,
-        "product_category": row["product_category"] if row["product_category"] else "",
-        "product_group1": row["product_group1"] if row["product_group1"] else "",
-        "product_group2": row["product_group2"] if row["product_group2"] else "",
-        "product_group3": row["product_group3"] if row["product_group3"] else "",
-        "product_color": row["product_color"] if row["product_color"] else "",
-        "vendor": row["vendor"] if row["vendor"] else "",
-        "designer": row["designer"] if row["designer"] else "",
+        "product_category": None if not row["product_category"] else row["product_category"],
+        "product_group1": None if not row["product_group1"] else row["product_group1"],
+        "product_group2": None if not row["product_group2"] else row["product_group2"],
+        "product_group3": None if not row["product_group3"] else row["product_group3"],
+        "product_color": None if not row["product_color"] else row["product_color"],
+        "fabric_material": None if not row["fabric_material"] else row["fabric_material"],
+        "fabric_type": None if not row["fabric_type"] else row["fabric_type"],
+        "vendor": None if not row["vendor"] else row["vendor"],
+        "designer": None if not row["designer"] else row["designer"],
     }
+    return {k: v for (k, v) in data.items() if v is not None}
 
 
 if __name__ == "__main__":
@@ -185,13 +189,11 @@ if __name__ == "__main__":
             if product_row["available"] < 1 and product_row["hide_when_empty"]:
                 continue
 
-            new_product_status = ShopifyProductStatus.ACTIVE
-
             new_product = dto.shopify.Product(
                 title=product_row["title"],
                 body_html=" ".join(["<p>" + x.strip() + "</p>\n" for x in product_row["body_html"].split("\n")]),
                 product_type=product_row["product_category"],
-                status=new_product_status,
+                status=settings.new_product_status,
                 tags=product_row["tags"].strip(","),
                 vendor=product_row["vendor"],
             )

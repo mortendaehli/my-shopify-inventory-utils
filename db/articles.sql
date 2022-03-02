@@ -39,4 +39,13 @@ LEFT JOIN EanNos ean ON ean.ArticleID = art.ArticleId
 ;
 
 
-SELECT TOP(200) * FROM Articles ORDER BY ArticleID DESC
+SELECT TOP(200) * FROM Articles art
+LEFT JOIN MainGroups grp ON grp.MainGroupID = art.MainGroupID
+LEFT JOIN WebArticleGroup1s web1 ON web1.WebArticleGroup1ID = art.WebArticleGroup1ID
+LEFT JOIN WebArticleGroup2s web2 ON web2.WebArticleGroup2ID = art.WebArticleGroup2ID
+LEFT JOIN WebArticleGroup3s web3 ON web3.WebArticleGroup3ID = art.WebArticleGroup3ID
+LEFT JOIN Units uni ON uni.UnitID = art.UnitID
+LEFT JOIN Suppliers sup ON sup.SupplierID = art.SupplierID
+LEFT JOIN Manufacturers man ON man.ManufacturerID = art.ManufacturerID
+LEFT JOIN EanNos ean ON ean.ArticleID = art.ArticleId
+WHERE art.ArticleNo LIKE '104596'
