@@ -49,6 +49,8 @@ logger = logging.getLogger(__name__)
 
 class Settings(BaseSettings):
     delete_all: bool = False
+    delete_old_products: bool = True
+    delete_old_metadata: bool = True
     add_metadata: bool = True
     update_metadata: bool = True
     shopify_key: str = os.getenv("QUILTEFRYD_SHOPIFY_KEY")
@@ -70,6 +72,7 @@ def _get_metafield_data(row: pd.Series) -> Dict[str, Union[str, int]]:
         "product_color": None if not row["product_color"] else row["product_color"],
         "fabric_material": None if not row["fabric_material"] else row["fabric_material"],
         "fabric_type": None if not row["fabric_type"] else row["fabric_type"],
+        "pattern_type": None if not row["pattern_type"] else row["pattern_type"],  # Fixme: Add to filtering
         "vendor": None if not row["vendor"] else row["vendor"],
         "designer": None if not row["designer"] else row["designer"],
     }
@@ -80,6 +83,7 @@ if __name__ == "__main__":
     settings = Settings()
 
     df = pd.read_pickle(Path(myshopify.__file__).parent.parent / "data" / "shopify_products_export.pickle")
+    df = df.groupby("source_id").last()
 
     if settings.allowed_product_categories is not None:
         df = df.loc[df["product_category"].map(lambda x: x in settings.allowed_product_categories)]
@@ -109,6 +113,16 @@ if __name__ == "__main__":
     products = get_all_shopify_resources(shopify.Product)
     location = shopify.Location.find_first()
 
+    # Clean up old products
+    if settings.delete_old_products:
+        logger.info("Updating products")
+        for i, product in enumerate(products):
+            if product.variants[0].sku not in df["sku"].values:
+                logger.warning(f"Deleting old product: {product.title} - sku: {product.variants[0].sku}")
+                for variant in product.variants:
+                    delete_variant(variant=variant)
+                delete_product(product=product)
+
     skus = []
     logger.info("Updating products")
     for i, product in enumerate(products):
@@ -123,9 +137,15 @@ if __name__ == "__main__":
             )
             update_product(product_update_dto=product_dto, shopify_product=product)
 
+            if product.images is None or product.images == []:
+                images = add_images_to_product(
+                    product=product,
+                    image_list=[Image.open(io.BytesIO(product_row.images))] if product_row.images else []
+                )
+
             if settings.update_metadata:
                 metafields_data = _get_metafield_data(row=product_row)
-                update_product_metafield(product=product, data=metafields_data)
+                update_product_metafield(product=product, data=metafields_data, delete_missing=settings.delete_old_metadata)
                 sleep(0.5)
 
             for variant in product.variants:

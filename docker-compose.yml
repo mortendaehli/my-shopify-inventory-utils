@@ -11,7 +11,7 @@ services:
       - MSSQL_SA_PASSWORD=${SQL_PASSWORD}
       - MSSQL_PID=Express
     volumes:
-      - sql1data:/var/opt/mssql
+       #- sql1data:/var/opt/mssql
       - ./data/db:/data
     ports:
       - "1433:1433"
@@ -29,5 +29,5 @@ services:
     volumes:
       - ./:/code
 
-volumes:
-  sql1data:
+# volumes:
+#   sql1data:
