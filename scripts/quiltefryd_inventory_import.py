@@ -49,7 +49,7 @@ logger = logging.getLogger(__name__)
 
 class Settings(BaseSettings):
     delete_all: bool = False
-    delete_old_products: bool = True
+    delete_old_products: bool = False
     delete_old_metadata: bool = True
     add_metadata: bool = True
     update_metadata: bool = True
