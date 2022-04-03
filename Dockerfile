@@ -33,5 +33,3 @@ COPY pyproject.toml poetry.lock ./
 RUN pip install poetry && poetry config virtualenvs.create false
 RUN poetry install --no-root
 
-# you can also use regular install of the packages
-RUN pip install pyodbc SQLAlchemy

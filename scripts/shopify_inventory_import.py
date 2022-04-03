@@ -9,11 +9,9 @@ from typing import Dict, List, Optional, Union
 import numpy as np
 import pandas as pd
 import shopify
-from dotenv import load_dotenv
 from PIL import Image
 from pydantic import BaseSettings
 
-import myshopify
 from myshopify import dto
 from myshopify.dto.types import (
     ShopifyFulfillmentService,
@@ -36,8 +34,6 @@ from myshopify.shopify.inventory import (
     update_variant,
 )
 
-load_dotenv()
-
 logging.getLogger("pyactiveresource").setLevel("WARNING")
 logging.getLogger("PIL").setLevel("WARNING")
 logging_format = "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s"
@@ -48,7 +44,21 @@ logging.basicConfig(level=logging.DEBUG, handlers=[file_handler, stream_handler]
 logger = logging.getLogger(__name__)
 
 
-class Settings(BaseSettings):
+class SettingsQuiltefryd(BaseSettings):
+    delete_all: bool = False
+    delete_old_products: bool = False
+    delete_old_metadata: bool = True
+    add_metadata: bool = True
+    update_metadata: bool = True
+    shopify_key: str = os.getenv("QUILTEFRYD_SHOPIFY_KEY")
+    shopify_password: str = os.getenv("QUILTEFRYD_SHOPIFY_PWD")
+    shopify_shop_name: str = os.getenv("QUILTEFRYD_SHOPIFY_NAME")
+    new_product_status: ShopifyProductStatus = ShopifyProductStatus.ACTIVE
+    allowed_product_categories: Optional[list[str]] = None
+    allowed_product_group1: Optional[List[str]] = None
+
+
+class SettingsMinSymaskin(BaseSettings):
     delete_all: bool = False
     delete_old_products: bool = False
     delete_old_metadata: bool = True
@@ -98,10 +108,9 @@ def _get_metafield_data(row: pd.Series) -> Dict[str, Union[str, int]]:
     return {k: v for (k, v) in data.items() if v is not None}
 
 
-if __name__ == "__main__":
-    settings = Settings()
+def main(settings: BaseSettings, input_path: Path) -> None:
 
-    df = pd.read_pickle(Path(myshopify.__file__).parent.parent / "data" / "shopify_products_export.pickle")
+    df = pd.read_pickle(input_path)
     df = df.groupby("source_id").last()
 
     if settings.allowed_product_categories is not None:
@@ -257,3 +266,11 @@ if __name__ == "__main__":
             sleep(0.5)
 
     logger.info("Done!")
+
+
+if __name__ == "__main__":
+    settings_list = [SettingsQuiltefryd(), SettingsMinSymaskin()]
+    INPUT_PATH = Path(__file__).parent / "data" / "shopify_products_export.pickle"
+
+    for settings in settings_list:
+        main(settings=settings, input_path=INPUT_PATH)
