@@ -5,7 +5,7 @@ from urllib.error import HTTPError
 
 import shopify
 from PIL import Image
-from pyactiveresource.connection import ServerError, ClientError
+from pyactiveresource.connection import ClientError, ServerError
 from retry import retry
 
 from myshopify import dto
@@ -156,7 +156,9 @@ def delete_metafield(metafield: shopify.Metafield) -> None:
 
 
 @retry((HTTPError, ServerError, ClientError), tries=10, delay=10)
-def update_product_metafield(product: shopify.Product, data: Dict[str, str], delete_missing: bool = False) -> List[shopify.Metafield]:
+def update_product_metafield(
+    product: shopify.Product, data: Dict[str, str], delete_missing: bool = False
+) -> List[shopify.Metafield]:
     metafields = product.metafields()
     metafields_keys = [field.attributes["key"] for field in metafields]
     for metafield in metafields:

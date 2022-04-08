@@ -5,6 +5,7 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from time import sleep
 from typing import Dict, List, Optional, Union
+from dotenv import load_dotenv
 
 import numpy as np
 import pandas as pd
@@ -34,6 +35,7 @@ from myshopify.shopify.inventory import (
     update_variant,
 )
 
+load_dotenv(dotenv_path=(Path(__file__).parent.parent / ".env").as_posix())
 logging.getLogger("pyactiveresource").setLevel("WARNING")
 logging.getLogger("PIL").setLevel("WARNING")
 logging_format = "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s"
@@ -44,7 +46,7 @@ logging.basicConfig(level=logging.DEBUG, handlers=[file_handler, stream_handler]
 logger = logging.getLogger(__name__)
 
 
-class SettingsQuiltefryd(BaseSettings):
+class Settings(BaseSettings):
     delete_all: bool = False
     delete_old_products: bool = False
     delete_old_metadata: bool = True
@@ -56,38 +58,6 @@ class SettingsQuiltefryd(BaseSettings):
     new_product_status: ShopifyProductStatus = ShopifyProductStatus.ACTIVE
     allowed_product_categories: Optional[list[str]] = None
     allowed_product_group1: Optional[List[str]] = None
-
-
-class SettingsMinSymaskin(BaseSettings):
-    delete_all: bool = False
-    delete_old_products: bool = False
-    delete_old_metadata: bool = True
-    add_metadata: bool = True
-    update_metadata: bool = True
-    shopify_key: str = os.getenv("MINSYMASKIN_SHOPIFY_KEY")
-    shopify_password: str = os.getenv("MINSYMASKIN_SHOPIFY_PWD")
-    shopify_shop_name: str = os.getenv("MINSYMASKIN_SHOPIFY_NAME")
-    new_product_status: ShopifyProductStatus = ShopifyProductStatus.DRAFT
-    allowed_product_categories: Optional[list[str]] = None
-    allowed_product_group1: Optional[List[str]] = [
-        "Bekledningstoff",
-        "Bekledningsmønster",
-        "Glidelås",
-        "Merkepenn",
-        "Linjal",
-        "Sakser",
-        "Nåler",
-        "skjærekniver",
-        "skjærematter",
-        "Vesketilbehør",
-        "Lampe",
-        "Strykejern",
-        "Diverse",
-        "Symaskintilbehør",
-        "Symaskiner",
-        "Broderigarn",
-        "Tråd",
-    ]
 
 
 def _get_metafield_data(row: pd.Series) -> Dict[str, Union[str, int]]:
@@ -108,7 +78,7 @@ def _get_metafield_data(row: pd.Series) -> Dict[str, Union[str, int]]:
     return {k: v for (k, v) in data.items() if v is not None}
 
 
-def main(settings: BaseSettings, input_path: Path) -> None:
+def main(settings: Settings, input_path: Path) -> None:
 
     df = pd.read_pickle(input_path)
     df = df.groupby("source_id").last()
@@ -166,14 +136,16 @@ def main(settings: BaseSettings, input_path: Path) -> None:
             update_product(product_update_dto=product_dto, shopify_product=product)
 
             if product.images is None or product.images == []:
-                images = add_images_to_product(
+                _ = add_images_to_product(
                     product=product,
-                    image_list=[Image.open(io.BytesIO(product_row.images))] if product_row.images else []
+                    image_list=[Image.open(io.BytesIO(product_row.images))] if product_row.images else [],
                 )
 
             if settings.update_metadata:
                 metafields_data = _get_metafield_data(row=product_row)
-                update_product_metafield(product=product, data=metafields_data, delete_missing=settings.delete_old_metadata)
+                update_product_metafield(
+                    product=product, data=metafields_data, delete_missing=settings.delete_old_metadata
+                )
                 sleep(0.5)
 
             for variant in product.variants:
@@ -253,7 +225,7 @@ def main(settings: BaseSettings, input_path: Path) -> None:
                 available=int(np.nan_to_num(product_row["available"], nan=0)),
             )
 
-            images = add_images_to_product(
+            _ = add_images_to_product(
                 product=product, image_list=[Image.open(io.BytesIO(product_row.images))] if product_row.images else []
             )
 
@@ -269,8 +241,7 @@ def main(settings: BaseSettings, input_path: Path) -> None:
 
 
 if __name__ == "__main__":
-    settings_list = [SettingsQuiltefryd(), SettingsMinSymaskin()]
+    settings = Settings()
     INPUT_PATH = Path(__file__).parent / "data" / "shopify_products_export.pickle"
 
-    for settings in settings_list:
-        main(settings=settings, input_path=INPUT_PATH)
+    main(settings=settings, input_path=INPUT_PATH)

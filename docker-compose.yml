@@ -11,11 +11,9 @@ services:
       - MSSQL_SA_PASSWORD=${SQL_PASSWORD}
       - MSSQL_PID=Express
     volumes:
-      - ./scripts/data/sql:/data
+      - ./scripts/data:/data
     ports:
       - "1433:1433"
-    expose:
-      - "1433"
 
   backend:
     depends_on:
