@@ -2,10 +2,11 @@ from collections import OrderedDict
 from typing import List
 
 from bs4 import BeautifulSoup
-
+import json
+import re
 import myshopify.dto.product
 from myshopify import dto
-from myshopify.scraping.utils import get_image_from_url, get_page_html_from_url
+from myshopify.scraping.utils import get_image_from_url, get_page_html_from_url, get_clean_text_from_soup
 
 
 def get_product_list_page(page_number: int = 1):
@@ -54,27 +55,27 @@ def get_images_from_product_page(url: str) -> List[myshopify.dto.product.Product
     ]
 
 
-def get_product_from_product_page(product_metadata: dto.ProductMetadata) -> dto.ProductDescription:
+def get_product_from_product_page(url: str) -> dto.ProductDescription:
     """
     Parsing a Brother product page and creating a product description
     """
 
-    product_page = get_page_html_from_url(url=product_metadata.url)
+    product_page = get_page_html_from_url(url=url)
     soup = BeautifulSoup(product_page, "html.parser")
-    name = soup.select_one("title").text
-
-    header = soup.select_one(".product-detail--container-title").find("h1", itemprop="name").text
-    summary = soup.select_one(".product-detail--container-title").find("p", itemprop="description").text
-    product_metadata.sku = soup.select_one(".product-detail--container-title").find("p", itemprop="sku").text
     product_detail_soup = soup.select_one(".product-detail--content")
 
+    data_layer = json.loads(soup.find("script", text=re.compile("var\s+dataLayer")).text.split("= ")[1].split(";")[0])[0]
+    # product_details = data_layer["detailProducts"][0]
+
+    name = soup.select_one("title").text
+    short_name = data_layer["detailProducts"][0]["name"]
+    sku = data_layer["detailProducts"][0]["sku"]
+    header = soup.select_one(".product-detail--container-title").find("h1", itemprop="name").text
+    summary = soup.select_one(".product-detail--container-title").find("p", itemprop="description").text
+
+    key_features = product_detail_soup.find("article", id="1")
     standard_accessory = product_detail_soup.find("article", id="2")
-    standard_accessory_list = [x.text for x in standard_accessory.findAll("li") if x.text]
-
-    detailed_description = "\n".join([x.text for x in product_detail_soup.find("article", id="overview").find_all("a")])
-
-    features = product_detail_soup.find("article", id="1")
-    features_list = [x.text for x in features.findAll("li") if x.text]
+    detailed_description = product_detail_soup.find("article", id="overview")
 
     optional_accessory = product_detail_soup.find("article", id="supplies")
     optional_accessory_list = [
@@ -98,19 +99,23 @@ def get_product_from_product_page(product_metadata: dto.ProductMetadata) -> dto.
         }
     )
 
+    product_metadata = dto.ProductMetadata(
+        name=name,
+        short_code=short_name,
+        brand="Brother",
+        sku=sku,
+        url=url
+    )
+
     return dto.ProductDescription(
         name=name,
         metadata=product_metadata,
+        images=get_images_from_product_page(url=url),
         header=header,
         summary=summary,
-        features_header=None,
-        features=features_list,
-        standard_accessory_header=None,
-        standard_accessory=standard_accessory_list,
-        detailed_description_header=None,
-        detailed_description=detailed_description,
-        optional_accessory_header=None,
+        features=get_clean_text_from_soup(key_features),
+        standard_accessory=get_clean_text_from_soup(standard_accessory),
+        detailed_description=get_clean_text_from_soup(detailed_description),
         optional_accessory=optional_accessory_list,
-        technical_specification_header=None,
         technical_specification_dict=technical_specification_dict,
     )

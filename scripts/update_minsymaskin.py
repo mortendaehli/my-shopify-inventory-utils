@@ -5,11 +5,11 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from time import sleep
 from typing import Dict, List, Optional, Union
-from dotenv import load_dotenv
 
 import numpy as np
 import pandas as pd
 import shopify
+from dotenv import load_dotenv
 from PIL import Image
 from pydantic import BaseSettings
 

@@ -1,6 +1,6 @@
 from io import BytesIO
 from typing import List
-
+from retry import retry
 import requests
 from bs4 import BeautifulSoup, Comment
 from PIL import Image
@@ -43,7 +43,12 @@ def get_page_html_from_url(url: str) -> str:
     return r.text
 
 
+@retry(requests.exceptions.SSLError, delay=3, tries=5)
 def get_image_from_url(url: str) -> Image:
     r = requests.get(url)
     r.raise_for_status()
     return Image.open(BytesIO(r.content))
+
+
+def clean_html_text(string: str) -> str:
+    return "\n".join([x for x in string.splitlines() if x.strip()])

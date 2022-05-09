@@ -1,0 +1,1 @@
+from .products import get_product_from_product_page

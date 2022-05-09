@@ -22,17 +22,12 @@ class ProductImage(BaseModel):
 
 class ProductDescription(BaseModel):
     name: str
-    metadata: Optional[ProductMetadata] = None
+    metadata: Optional[ProductMetadata]
     images: Optional[List[ProductImage]]
     header: str
     summary: str
-    features_header: Optional[str]  # Egenskaper
-    features: List[str]
-    standard_accessory_header: Optional[str]  # Standard tilbehør
-    standard_accessory: List[str]
-    detailed_description_header: Optional[str]  # Bli bedre kjent med {name}
+    features: str
+    standard_accessory: str
     detailed_description: str
-    optional_accessory_header: Optional[str]  # Valgfritt tilbehør
     optional_accessory: List[ProductMetadata] = Field(default_factory=list)
-    technical_specification_header: Optional[str]  # Tekniske egenskaper
     technical_specification_dict: OrderedDict

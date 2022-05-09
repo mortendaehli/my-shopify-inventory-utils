@@ -45,7 +45,7 @@ class ProductVariant(BaseModel):
     weight: Optional[int] = None
     weight_unit: Optional[ShopifyWeightUnit] = None
 
-    def to_shopify_object(self, existing_object: Optional[shopify.Variant] = None) -> shopify.Variant:
+    def to_shopify_object(self, existing_object: Optional["Variant"] = None) -> "Variant":
         if existing_object:
             obj = existing_object
         else:
@@ -59,7 +59,7 @@ class ProductVariant(BaseModel):
         return obj
 
     @classmethod
-    def from_shopify_object(cls, shopify_obj: shopify.Variant):
+    def from_shopify_object(cls, shopify_obj: "Variant"):
         data = {}
         for field in cls.__fields__:
             data[field] = shopify_obj.__getattribute__(field)
@@ -85,7 +85,7 @@ class ProductImage(BaseModel):
     width: Optional[int] = None
     height: Optional[int] = None
 
-    def to_shopify_object(self, existing_object: Optional[shopify.Image] = None) -> shopify.Image:
+    def to_shopify_object(self, existing_object: Optional["Image"] = None) -> "Image":
         if existing_object:
             obj = existing_object
         else:
@@ -96,7 +96,7 @@ class ProductImage(BaseModel):
         return obj
 
     @classmethod
-    def from_shopify_object(cls, shopify_obj: shopify.Image):
+    def from_shopify_object(cls, shopify_obj: "Image"):
         data = {}
         for field in cls.__fields__:
             data[field] = shopify_obj.__getattribute__(field)
@@ -131,7 +131,7 @@ class Product(BaseModel):
     published_scope: Optional[ShopifyPublishScope] = ShopifyPublishScope.GLOBAL
     template_suffix: Optional[str] = None  # See docs.
 
-    def to_shopify_object(self, existing_object: Optional[shopify.Product] = None) -> shopify.Product:
+    def to_shopify_object(self, existing_object: Optional["Product"] = None) -> "Product":
         if existing_object:
             obj = existing_object
         else:
@@ -142,7 +142,7 @@ class Product(BaseModel):
         return obj
 
     @classmethod
-    def from_shopify_object(cls, shopify_obj: shopify.Product):
+    def from_shopify_object(cls, shopify_obj: "Product"):
         data = {}
         for field in cls.__fields__:
             data[field] = shopify_obj.__getattribute__(field)

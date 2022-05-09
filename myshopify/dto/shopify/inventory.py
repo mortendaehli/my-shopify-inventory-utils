@@ -21,7 +21,7 @@ class InventoryItem(BaseModel):
     tracked: bool
     requires_shipping: bool
 
-    def to_shopify_object(self, existing_object: Optional[shopify.InventoryItem] = None) -> shopify.InventoryItem:
+    def to_shopify_object(self, existing_object: Optional["InventoryItem"] = None) -> "InventoryItem":
         if existing_object:
             obj = existing_object
         else:
@@ -32,7 +32,7 @@ class InventoryItem(BaseModel):
         return obj
 
     @classmethod
-    def from_shopify_object(cls, shopify_obj: shopify.InventoryItem):
+    def from_shopify_object(cls, shopify_obj: "InventoryItem"):
         data = {}
         for field in cls.fields:
             data[field] = shopify_obj.__getattribute__(field)
@@ -47,7 +47,7 @@ class InventoryLevel(BaseModel):
     inventory_item_id: int
     location_id: int
 
-    def to_shopify_object(self, existing_object: Optional[shopify.InventoryLevel] = None) -> shopify.InventoryLevel:
+    def to_shopify_object(self, existing_object: Optional["InventoryLevel"] = None) -> "InventoryLevel":
         if existing_object:
             obj = existing_object
         else:
@@ -58,7 +58,7 @@ class InventoryLevel(BaseModel):
         return obj
 
     @classmethod
-    def from_shopify_object(cls, shopify_obj: shopify.InventoryLevel):
+    def from_shopify_object(cls, shopify_obj: "InventoryLevel"):
         data = {}
         for field in cls.fields:
             data[field] = shopify_obj.__getattribute__(field)

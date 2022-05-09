@@ -6,6 +6,9 @@ from ftplib import FTP, error_perm
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
+from dotenv import load_dotenv
+
+load_dotenv(dotenv_path=(Path(__file__).parent.parent / ".env").as_posix())
 logging_format = "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s"
 file_handler = RotatingFileHandler(Path(__file__).parent / ".log", maxBytes=1000, backupCount=0)
 stream_handler = logging.StreamHandler()
@@ -35,17 +38,13 @@ if __name__ == "__main__":
     filelist = list()
     for line in data:
         col = line.split()
-        datestr = " ".join(line.split()[5:8])
-        try:
-            timestamp = datetime.strptime(datestr, "%b %d %Y")
-        except ValueError:
-            timestamp = datetime.strptime(datestr + " " + str(datetime.now().year), "%b %d %H:%M %Y")
+        timestamp = datetime.strptime(" ".join(col[:2]), "%m-%d-%y %H:%M%p")
 
         datelist.append(timestamp)
-        filelist.append(col[8])
+        filelist.append(col[3])
 
     timestamp, filename = sorted(list(zip(datelist, filelist)), key=lambda x: x[0])[-1]
-    print(f"Downloading {filename}")
+    print(f"Downloading {filename} timestamp: {timestamp}")
     try:
         ftp.retrbinary("RETR %s" % filename, open(DATA_PATH / filename, "wb").write)
     except error_perm:
