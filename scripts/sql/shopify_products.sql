@@ -18,7 +18,7 @@ WITH Products AS (SELECT
 
                       -- Product category
                       CASE
-                          WHEN web1.Name LIKE 'Quiltestoff%' OR web1.Name LIKE 'Bekledning%stoff%' OR web1.Name LIKE 'Jersey%' THEN 'Stoffer'
+                          WHEN web1.Name LIKE 'Quiltestoff%' OR web1.Name LIKE 'Bekledning%stoff%' THEN 'Stoffer'
                           WHEN web1.Name LIKE N'mønster%' OR web1.Name LIKE N'Quiltemønster%' OR web1.Name LIKE N'Bekledning%mønster%' THEN N'Mønster'
                           WHEN web1.Name LIKE N'Tilbehør%' OR web1.Name LIKE 'Lim%' OR web1.Name LIKE N'Glidelås%' OR web1.Name LIKE 'Merkepenn%' OR web1.Name LIKE 'Linjal%' OR web1.Name LIKE 'Saks%' OR web1.Name LIKE N'Nål%' OR
                                web1.Name LIKE N'Skjærekniv%' OR web1.Name LIKE N'skjærematte%' OR web1.Name LIKE N'Vesketilbehør%' OR web1.Name LIKE 'Lampe%' OR web1.Name LIKE 'Strykejern%' OR web1.Name LIKE 'paper%piecing%' OR
@@ -35,7 +35,7 @@ WITH Products AS (SELECT
                           WHEN web1.Name LIKE 'Quiltestoff%' OR (art.Name LIKE '%stoffpakke%' OR web2.Name LIKE '%stoffpakke%' OR web3.Name LIKE '%stoffpakke%') THEN 'Quiltestoffer'
                           WHEN web1.Name LIKE 'Bekledning%stoff%' THEN 'Bekledningstoff'
 
-                      -- Mønster
+                          -- Mønster
                           WHEN web1.Name LIKE N'Quiltemønster%' THEN N'Quiltemønster'
                           WHEN web1.Name LIKE N'%mønster%klær%' OR web1.Name LIKE N'Bekledning%mønster%' THEN N'Bekledningsmønster'
 
@@ -85,15 +85,12 @@ WITH Products AS (SELECT
                           WHEN web1.Name LIKE N'Tråd%' THEN NULL
 
                           -- QuilteStoff and Bekledningstoff
-                          WHEN (web1.Name LIKE '%stoff%' OR web1.Name LIKE '%jersey%') AND (web1.Name LIKE '%Halvlin%' OR web2.Name LIKE '%Halvlin%' OR art.Name LIKE '%halvlin%') THEN 'Halvlin'
-                          WHEN (web1.Name LIKE '%stoff%' OR web1.Name LIKE '%jersey%') AND (web2.Name LIKE '%Japanske vevde%' OR art.Name LIKE '%japansk vevd%') THEN 'Japanske vevde'
-                          WHEN (web1.Name LIKE '%stoff%' OR web1.Name LIKE '%jersey%') AND (web2.Name LIKE '%Viscose%') THEN 'Viscose'
-                          WHEN (web1.Name LIKE '%stoff%' OR web1.Name LIKE N'%mønster%') AND (art.Name LIKE '%stoffpakke%' OR web2.Name LIKE '%stoffpakke%' OR web3.Name LIKE '%stoffpakke%') THEN 'Stoffpakke'
-                          WHEN (web1.Name LIKE '%stoff%' OR web1.Name LIKE '%jersey%') AND (web2.Name LIKE 'bakgrunn%basis%stoffer' OR web2.Name LIKE 'baksidestoff%') THEN 'Baksidestoff'
-                          WHEN (web1.Name LIKE '%stoff%' OR web1.Name LIKE '%jersey%') AND (web2.Name LIKE 'Bomull' OR web3.Name LIKE 'Bomull' OR art.Name LIKE '%cotton%' OR art.Name LIKE '%bomull%' OR art.Description LIKE '%bomull%')
-                              THEN 'Bomull'
-                          WHEN (web1.Name LIKE '%stoff%' OR web1.Name LIKE '%jersey%') AND (web2.Name LIKE 'lin%' OR art.Name LIKE '%lin%' OR art.Description LIKE ' lin%') THEN 'Lin'
-                          WHEN (web1.Name LIKE '%stoff%' OR web1.Name LIKE '%jersey%') AND (web2.Name LIKE 'ull' OR web3.Name LIKE 'ull' OR art.Name LIKE '%wool%' OR art.Name LIKE '%ull%') THEN 'Ull'
+                          WHEN web1.Name LIKE '%stoff%' AND (web2.Name LIKE '%Halvlin%' OR art.Name LIKE '%halvlin%') THEN 'Halvlin'
+                          WHEN web1.Name LIKE '%stoff%' AND (web2.Name LIKE '%Japansk%vevd%' OR art.Name LIKE '%japansk%vevd%') THEN 'Bomull'
+                          WHEN web1.Name LIKE '%stoff%' AND web2.Name LIKE '%Viscose%' THEN 'Viscose'
+                          WHEN web1.Name LIKE '%stoff%' AND (web2.Name LIKE 'Bomull' OR web3.Name LIKE 'Bomull' OR art.Name LIKE '%cotton%' OR art.Name LIKE '%bomull%' OR art.Description LIKE '%bomull%') THEN 'Bomull'
+                          WHEN web1.Name LIKE '%stoff%' AND (web2.Name LIKE 'lin%' OR art.Name LIKE '%lin%' OR art.Description LIKE ' lin%') THEN 'Lin'
+                          WHEN web1.Name LIKE '%stoff%' AND (web2.Name LIKE 'ull' OR web3.Name LIKE 'ull' OR art.Name LIKE '%wool%' OR art.Name LIKE '%ull%') THEN 'Ull'
 
                           -- Mønster
                           WHEN web2.Name LIKE N'Mønster barn' OR (web1.Name LIKE N'mønster%' AND web2.Name LIKE 'Barn%') THEN N'Mønster barn'
@@ -153,20 +150,23 @@ WITH Products AS (SELECT
                           WHEN web1.Name LIKE N'Tråd%' THEN NULL
 
                           -- Stoff
+                          WHEN web1.Name LIKE '%stoff%' AND (art.Name LIKE '%stoffpakke%' OR web2.Name LIKE '%stoffpakke%') THEN 'Stoffpakke'
+                          WHEN web1.Name LIKE '%stoff%' AND web2.Name LIKE '%baksidestoff%' THEN 'Baksidestoff'
                           WHEN (web1.Name LIKE '%stoff%' OR web1.Name LIKE '%jersey%') AND (art.Name LIKE '%interlock%' OR web2.Name LIKE '%interlock%' OR web3.Name LIKE '%interlock%') THEN N'Interlock'
                           WHEN (web1.Name LIKE '%stoff%' OR web1.Name LIKE '%jersey%') AND (web2.Name LIKE 'Rib' OR web3.Name LIKE 'Rib') THEN 'Rib'
                           WHEN (web1.Name LIKE '%stoff%' OR web1.Name LIKE '%jersey%') AND (web2.Name LIKE 'French Terry' OR web3.Name LIKE 'French Terry') THEN 'French Terry'
                           WHEN (web1.Name LIKE '%stoff%' OR web1.Name LIKE '%jersey%') AND (web2.Name LIKE 'Melert%' OR web3.Name LIKE 'Melert%' or art.Name LIKE '%melert%') THEN 'Melert'
                           WHEN (web1.Name LIKE '%stoff%' OR web1.Name LIKE '%jersey%') AND (web2.Name LIKE 'Essex%' OR web3.Name LIKE 'Essex%') THEN 'Essex'
-                          WHEN (web1.Name LIKE '%stoff%' OR web1.Name LIKE '%jersey%') AND (web2.Name LIKE 'Vevd%' OR web3.Name LIKE 'Vevd%' OR web2.Name LIKE N'Vevd%' OR web2.Name LIKE '%vevd%') THEN N'Vevde stoffer'
                           WHEN (web1.Name LIKE '%stoff%' OR web1.Name LIKE '%jersey%') AND (web2.Name LIKE 'batik%' OR web3.Name LIKE 'batik%' OR web2.Name LIKE '%batik%' OR art.Name LIKE '%batik%') THEN 'Batikk'
                           WHEN (web1.Name LIKE '%stoff%' OR web1.Name LIKE '%jersey%') AND (web2.Name LIKE 'Chambray%' OR web3.Name LIKE 'Chambray%' OR web2.Name LIKE N'Chambray') THEN N'Chambray'
                           WHEN (web1.Name LIKE '%stoff%' OR web1.Name LIKE '%jersey%') AND (web2.Name LIKE 'Jersey%' OR web3.Name LIKE 'Jersey%') THEN 'Jersey'
+                          WHEN web1.Name LIKE '%stoff%' AND (web2.Name LIKE '%Japansk%vevd%' OR art.Name LIKE '%japansk%vevd%') THEN 'Japanske vevde'
+                          WHEN (web1.Name LIKE '%stoff%' OR web1.Name LIKE '%jersey%') AND (web2.Name LIKE 'Vevd%' OR web3.Name LIKE 'Vevd%' OR web2.Name LIKE N'Vevd%' OR web2.Name LIKE '%vevd%') THEN N'Vevde stoffer'
+                          WHEN (web1.Name LIKE '%stoff%' OR web1.Name LIKE '%jersey%') AND (web2.Name LIKE 'trykte stoffer' OR web3.Name LIKE 'trykte stoffer' OR web2.Name LIKE 'trykte stoffer') THEN 'Trykte stoffer'
 
+                          -- Seasonal before trykte stoffer in order to avoid override.
                           WHEN web1.Name LIKE '%stoff%' AND (web2.Name LIKE N'påske%' OR web3.Name LIKE N'påske%') THEN N'Påskestoffer'
                           WHEN web1.Name LIKE '%stoff%' AND (art.Name LIKE '%christmas%' OR art.Name LIKE '%jul%' OR web2.Name LIKE 'Jul%' OR web3.Name LIKE 'Jul%') THEN 'Julestoffer'
-                          -- Seasonal before trykte stoffer in order to avoid override.
-                          WHEN (web1.Name LIKE '%stoff%' OR web1.Name LIKE '%jersey%') AND (web2.Name LIKE 'trykte stoffer' OR web3.Name LIKE 'trykte stoffer' OR web2.Name LIKE 'trykte stoffer') THEN 'Trykte stoffer'
 
                           -- Mønstre
                           WHEN web1.Name LIKE N'%mønster%' AND (art.Name LIKE '%christmas%' OR art.Name LIKE '%jul%' OR web2.Name LIKE 'Jul%' OR web3.Name LIKE 'Jul%') THEN N'Julemønster'
@@ -362,9 +362,9 @@ SELECT pro.sku,
        product_group1,
        product_group2,
        product_group3,
-       IIF(product_category LIKE '%stoff%', product_group2, NULL) AS fabric_material,
-       IIF(product_category LIKE '%stoff%', product_group3, NULL) AS fabric_type,
-       IIF(product_category LIKE '%stoff%', product_color, NULL) AS product_color,
+       IIF(product_category LIKE 'stoff%', product_group2, NULL) AS fabric_material,
+       IIF(product_category LIKE 'stoff%', product_group3, NULL) AS fabric_type,
+       IIF(product_category LIKE 'stoff%', product_color, NULL) AS product_color,
        IIF(product_category LIKE N'%mønster%', product_group3, NULL) AS pattern_type,
        vendor,
        designer,
