@@ -49,7 +49,7 @@ logger = logging.getLogger(__name__)
 class Settings(BaseSettings):
     delete_all: bool = False
     delete_old_products: bool = False
-    delete_old_metadata: bool = True
+    delete_old_metadata: bool = False
     add_metadata: bool = True
     update_metadata: bool = True
     shopify_key: str = os.getenv("QUILTEFRYD_SHOPIFY_KEY")
@@ -113,6 +113,8 @@ def main(settings: Settings, input_path: Path) -> None:
 
     # Clean up old products
     if settings.delete_old_products:
+        if not len(df) > 1500:
+            raise ValueError("Expected more products")
         logger.info("Updating products")
         for i, product in enumerate(products):
             if product.variants[0].sku not in df["sku"].values:

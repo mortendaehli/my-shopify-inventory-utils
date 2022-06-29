@@ -376,6 +376,7 @@ FROM Products pro
 WHERE
     source_id NOT IN (45413, 49352, 51701, 53655)
     AND NOT (price < 10 AND available <= 0)
+    AND NOT (vendor LIKE 'Brother' AND available <= 0)
 
 ORDER BY source_id
 ;
