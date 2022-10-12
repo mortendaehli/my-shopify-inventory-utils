@@ -370,7 +370,7 @@ SELECT pro.sku,
        designer,
        hide_when_empty,
        CASE WHEN discount_start < CURRENT_TIMESTAMP AND CURRENT_TIMESTAMP < discount_end AND discounted_price > 0 THEN IIF(price_unit LIKE 'meter', ROUND(CAST(discounted_price AS FLOAT) / 10.0, 1), discounted_price) END AS discounted_price,
-       CONCAT(product_category, ',', product_group1, ',', product_group2, ',', product_group3, ',', product_color, ',', vendor, ',', designer, ',', new_tag)                                                                AS tags
+       CONCAT(product_category, ',', product_group1, ',', product_group2, ',', product_group3, ',', product_color, ',', vendor, ',', designer, ',', new_tag, ',', IIF(price_unit LIKE 'meter%', 'metervare', 'stykkvare'))                                                                AS tags
 
 FROM Products pro
 WHERE
