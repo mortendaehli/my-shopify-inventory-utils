@@ -39,7 +39,7 @@ load_dotenv(dotenv_path=(Path(__file__).parent.parent / ".env").as_posix())
 logging.getLogger("pyactiveresource").setLevel("WARNING")
 logging.getLogger("PIL").setLevel("WARNING")
 logging_format = "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s"
-file_handler = RotatingFileHandler(Path(__file__).parent / ".log", maxBytes=1000, backupCount=0)
+file_handler = RotatingFileHandler(Path(__file__).parent / "quiltefryd.log", maxBytes=1000000, backupCount=0)
 stream_handler = logging.StreamHandler()
 logging.basicConfig(level=logging.DEBUG, handlers=[file_handler, stream_handler], format=logging_format)
 
