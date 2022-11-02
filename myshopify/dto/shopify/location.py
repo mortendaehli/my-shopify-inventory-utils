@@ -27,7 +27,7 @@ class Location(BaseModel):
     localized_country_name: str
     localized_province_name: str
 
-    def to_shopify_object(self, existing_object: Optional["Location"] = None) -> "Location":
+    def to_shopify_object(self, existing_object: Optional[shopify.Location] = None) -> shopify.Location:
         if existing_object:
             obj = existing_object
         else:
@@ -38,7 +38,7 @@ class Location(BaseModel):
         return obj
 
     @classmethod
-    def from_shopify_object(cls, shopify_obj: "Location"):
+    def from_shopify_object(cls, shopify_obj: shopify.Location):
         data = {}
         for field in cls.fields:
             data[field] = shopify_obj.__getattribute__(field)

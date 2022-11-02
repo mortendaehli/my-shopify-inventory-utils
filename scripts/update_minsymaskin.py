@@ -1,6 +1,8 @@
 import io
 import logging
 import os
+# import ssl
+# ssl._create_default_https_context = ssl._create_unverified_context
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from time import sleep
@@ -111,7 +113,7 @@ def main(settings: Settings, input_path: Path) -> None:
         f"@{settings.shopify_shop_name}.myshopify.com/admin"
     )
 
-    shopify.ShopifyResource.set_site(value=shop_url)  # noqa
+    shopify.ShopifyResource.set_site(value=shop_url)
 
     if settings.delete_all:
         products = get_all_shopify_resources(shopify.Product)

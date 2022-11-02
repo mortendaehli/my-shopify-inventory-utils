@@ -24,7 +24,7 @@ class Metafield(BaseModel):
     type: ShopifyType
     value_type: ShopifyValueType
 
-    def to_shopify_object(self, existing_object: Optional["Metafield"] = None) -> "Metafield":
+    def to_shopify_object(self, existing_object: Optional[shopify.Metafield] = None) -> shopify.Metafield:
         if existing_object:
             obj = existing_object
         else:
@@ -35,7 +35,7 @@ class Metafield(BaseModel):
         return obj
 
     @classmethod
-    def from_shopify_object(cls, shopify_obj: "Metafield"):
+    def from_shopify_object(cls, shopify_obj: shopify.Metafield):
         data = {}
         for field in cls.fields:
             data[field] = shopify_obj.__getattribute__(field)
