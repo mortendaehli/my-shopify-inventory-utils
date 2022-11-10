@@ -6,9 +6,8 @@ from ftplib import FTP, error_perm
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
-from dotenv import load_dotenv
+from myshopify.config import config
 
-load_dotenv(dotenv_path=(Path(__file__).parent.parent / ".env").as_posix())
 logging_format = "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s"
 file_handler = RotatingFileHandler(Path(__file__).parent / ".log", maxBytes=1000, backupCount=0)
 stream_handler = logging.StreamHandler()
@@ -22,10 +21,10 @@ if __name__ == "__main__":
     if not DATA_PATH.is_dir():
         os.mkdir(DATA_PATH)
 
-    ftp_host = os.getenv("FTP_HOST")
-    ftp_port = os.getenv("FTP_PORT")
-    ftp_user = os.getenv("FTP_USERNAME")
-    ftp_passwd = os.getenv("FTP_PASSWORD")
+    ftp_host = config.FTP_HOST
+    ftp_port = config.FTP_PORT
+    ftp_user = config.FTP_USERNAME
+    ftp_passwd = config.FTP_PASSWORD
 
     ftp = FTP()
     ftp.connect(host=ftp_host, port=int(ftp_port))

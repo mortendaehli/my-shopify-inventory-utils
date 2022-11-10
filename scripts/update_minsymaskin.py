@@ -1,6 +1,5 @@
 import io
 import logging
-import os
 # import ssl
 # ssl._create_default_https_context = ssl._create_unverified_context
 from logging.handlers import RotatingFileHandler
@@ -11,18 +10,11 @@ from typing import Dict, List, Optional, Union
 import numpy as np
 import pandas as pd
 import shopify
-from dotenv import load_dotenv
 from PIL import Image
 from pydantic import BaseSettings
 
 from myshopify import dto
-from myshopify.dto.types import (
-    ShopifyFulfillmentService,
-    ShopifyInventoryManagement,
-    ShopifyInventoryPolicy,
-    ShopifyProductStatus,
-)
-from myshopify.shopify.inventory import (
+from myshopify.api.shopify.inventory import (
     add_images_to_product,
     add_metafields,
     create_product,
@@ -36,8 +28,14 @@ from myshopify.shopify.inventory import (
     update_product_metafield,
     update_variant,
 )
+from myshopify.config import config
+from myshopify.dto.types import (
+    ShopifyFulfillmentService,
+    ShopifyInventoryManagement,
+    ShopifyInventoryPolicy,
+    ShopifyProductStatus,
+)
 
-load_dotenv(dotenv_path=(Path(__file__).parent.parent / ".env").as_posix())
 logging.getLogger("pyactiveresource").setLevel("WARNING")
 logging.getLogger("PIL").setLevel("WARNING")
 logging_format = "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s"
@@ -54,9 +52,9 @@ class Settings(BaseSettings):
     delete_old_metadata: bool = False
     add_metadata: bool = True
     update_metadata: bool = True
-    shopify_key: str = os.getenv("MINSYMASKIN_SHOPIFY_KEY")
-    shopify_password: str = os.getenv("MINSYMASKIN_SHOPIFY_PWD")
-    shopify_shop_name: str = os.getenv("MINSYMASKIN_SHOPIFY_NAME")
+    shopify_key: str = config.MINSYMASKIN_SHOPIFY_KEY
+    shopify_password: str = config.MINSYMASKIN_SHOPIFY_PWD
+    shopify_shop_name: str = config.MINSYMASKIN_SHOPIFY_NAME
     new_product_status: ShopifyProductStatus = ShopifyProductStatus.DRAFT
     allowed_product_categories: Optional[list[str]] = None
     allowed_product_group1: Optional[List[str]] = [

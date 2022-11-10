@@ -1,5 +1,5 @@
-# Ubuntu 20.04 base with Python runtime and pyodbc to connect to SQL Server
-FROM ubuntu:21.04
+# Ubuntu 22.04 base with Python runtime and pyodbc to connect to SQL Server
+FROM ubuntu:22.04
 ARG DEBIAN_FRONTEND=noninteractive
 WORKDIR /code
 

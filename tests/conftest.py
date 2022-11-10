@@ -1,13 +1,6 @@
 import logging
-from collections import OrderedDict
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
-
-import pytest
-
-import myshopify.dto.product
-from myshopify import dto
-from myshopify.scraping.utils import get_image_from_url
 
 logging.getLogger("urllib3").setLevel(logging.ERROR)
 logging.getLogger("selenium").setLevel(logging.ERROR)
@@ -41,39 +34,3 @@ file_handler.setFormatter(logging_format)
 stream_handler.setFormatter(logging_format)
 
 logging.basicConfig(level=logging.DEBUG, handlers=[file_handler, stream_handler])
-
-
-@pytest.fixture
-def product_metadata():
-    return dto.ProductMetadata(
-        name="Sewing machine", short_code="machine1", brand="Some brand", sku="100040", url="http://www.example.com"
-    )
-
-
-@pytest.fixture
-def some_image():
-    url = "https://www.brother.eu/-/media/product-images/supplies/sewing-and-craft/sewing-machines/a80/a80_right.png"
-    return myshopify.dto.product.ProductImage(
-        name="a80_right", alt="Alternative text", suffix="png", url=url, image=get_image_from_url(url=url)
-    )
-
-
-@pytest.fixture
-def some_product(product_metadata, some_image) -> dto.ProductDescription:
-    return dto.ProductDescription(
-        name="Sewing machine",
-        metadata=product_metadata,
-        images=[some_image],
-        header="Strong and sturdy!",
-        summary="This is the product for you if you want quality!.",
-        features_header="Features",
-        features=["Feature 1", "Feature 2", "Feature 3"],
-        standard_accessory_header="Standard accessory",
-        standard_accessory=["Accessory 1", "Accessory 2", "Accessory 3"],
-        detailed_description_header="Get to know the details!",
-        detailed_description="This is an awesome product!",
-        optional_accessory_header="Optional accessory",
-        optional_accessory=[product_metadata],
-        technical_specification_header="Specifications",
-        technical_specification_dict=OrderedDict({("weight", "9.8kg"), ("size", "120x140cm")}),
-    )
