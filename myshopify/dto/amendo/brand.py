@@ -1,25 +1,53 @@
+from __future__ import annotations
+
 from datetime import datetime
 from typing import List, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, constr
 
-from .base import ResponseBase
+from myshopify.dto.amendo.base import BaseEntity, BaseResponse
 
 
-class Brand(BaseModel):
+class Brand(BaseEntity):
     brandId: Optional[int]
-    brandName: str
-    comments: str
-    isActive: Optional[bool]
-    isDeleted: Optional[bool]
-    createdAt: Optional[datetime]
-    updatedAt: Optional[datetime]
+    brandName: constr(max_length=90)
 
 
-class BrandsResponse(ResponseBase):
+class BrandList(BaseResponse):
     brands: List[Brand]
-    total_count: int
+    totalCount: int
 
 
-class BrandDetailResponse(BaseModel):
+class BrandSaveData(BaseModel):
+    status: bool
+    code: int
+    brandData: Brand
+    validationMessage: str
+
+
+class BrandCreateBody(BaseModel):
+    data: List[Brand]
+
+
+class BrandUpdateBody(BaseModel):
+    data: List[Brand]
+
+
+class BrandCreateResponse(BaseResponse):
+    data: List[BrandSaveData]
+
+
+class BrandUpdateResponse(BaseResponse):
+    status: bool
+    code: int
+    dateTimeBeforeQryExec: datetime
+    totalAffected: int
+    data: [BrandSaveData]
+
+
+class BrandViewResponse(BaseResponse):
     data: Brand
+
+
+class BrandIdPathParams(BaseModel):
+    brandId: int

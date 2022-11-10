@@ -31,5 +31,5 @@ RUN apt-get update && apt-get install -y locales \
 
 COPY pyproject.toml poetry.lock ./
 RUN pip install poetry && poetry config virtualenvs.create false
-RUN poetry install --no-root
+RUN poetry install
 
