@@ -24,7 +24,7 @@ class Product(BaseEntity):
     isTakeaway: bool
     stockControl: bool
     supplierIds: int
-    departments: [Department]
+    departments: List[Department]
 
 
 class ProductListResponse(BaseResponse):

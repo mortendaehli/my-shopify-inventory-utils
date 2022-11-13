@@ -4,7 +4,6 @@ from typing import Dict, Optional
 
 from apiclient.authentication_methods import BaseAuthenticationMethod
 from apiclient.client import APIClient
-from apiclient_pydantic import serialize_all_methods
 
 import myshopify.dto.amendo as dto
 import myshopify.dto.amendo.params
@@ -38,7 +37,7 @@ class AmendoHeaderAuthentication(BaseAuthenticationMethod):
         - Accept:application/json
         """
 
-        headers = {"Content-Type": "application/x-www-form-urlencoded"}
+        headers = {"Content-Type": "application/x-www-form-urlencoded", "Source": "Quiltefryd AS"}
         if self._token:
             headers.update({"Authorization": self._token})
         if self._extra:
@@ -56,10 +55,9 @@ class AmendoHeaderAuthentication(BaseAuthenticationMethod):
             ).dict(),
         )
 
-        self._token = dto.AccessToken(**response.get_json()).token
+        self._token = dto.AccessToken(**response.json()).token
 
 
-@serialize_all_methods()
 class AmendoAPIClient(APIClient):
     """
     https://github.com/MikeWooster/api-client
@@ -83,89 +81,127 @@ class AmendoAPIClient(APIClient):
 
     def generate_token(self, body: dto.GetAccessTokenPostRequest = None) -> None:
         """Generate token"""
-        return self.post(Endpoints.generate_token, body.dict())
+        r = self.post(Endpoints.generate_token, body.dict())
+        r.raise_for_status()
+        return r
 
     """ Brand """
 
-    def list_all_brands(self, path_params: dto.OffsetLimitFromDatePathParams) -> dto.BrandList:
-        """List all brands"""
-        return self.get(Endpoints.list_all_brands.format(**path_params.dict()))
-
     def create_brand(self, body: dto.BrandCreateBody) -> dto.BrandCreateResponse:
-        return self.post(Endpoints.create_or_update_brand, body.dict())
+        r = self.post(Endpoints.create_or_update_brand, body.dict())
+        r.raise_for_status()
+        return dto.BrandCreateResponse(**r.json())
 
     def update_brand(self, body: dto.BrandUpdateBody) -> dto.BrandUpdateResponse:
         """Update a brand"""
-        return self.post(Endpoints.create_or_update_brand, body.dict())
+        r = self.post(Endpoints.create_or_update_brand, body.dict())
+        r.raise_for_status()
+        return dto.BrandUpdateResponse(**r.json())
+
+    def list_all_brands(self, path_params: dto.OffsetLimitFromDatePathParams) -> dto.BrandList:
+        """List all brands"""
+        r = self.get(Endpoints.list_all_brands.format(**path_params.dict()))
+        r.raise_for_status()
+        return dto.BrandList(**r.json())
 
     def view_brand_details(self, path_params: dto.BrandIdPathParams) -> dto.BrandViewResponse:
         """View a brands details"""
-        return self.get(Endpoints.view_a_brands_details.format(**path_params.dict()))
+        r = self.get(Endpoints.view_brands_details.format(**path_params.dict()))
+        r.raise_for_status()
+        return dto.BrandViewResponse(**r.json())
 
     """ Product Category """
+
+    def create_category(self, body: dto.CategoryCreateBody) -> dto.CategorySaveResponse:
+        """Update a category"""
+        r = self.post(Endpoints.create_or_update_category, body.dict())
+        r.raise_for_status()
+        return dto.CategorySaveResponse(**r.json())
+
+    def update_category(self, body: dto.CategoryCreateBody) -> dto.CategorySaveResponse:
+        """Update a category"""
+        r = self.post(Endpoints.create_or_update_category, body.dict())
+        r.raise_for_status()
+        return dto.CategorySaveResponse(**r.json())
 
     def list_all_product_categories(
         self, path_params: dto.OffsetLimitFromDateSortOrderPathParams
     ) -> dto.CategoryListResponse:
         """List all product categories"""
-        return self.get(Endpoints.list_all_product_categories.format(**path_params.dict()))
+        r = self.get(Endpoints.list_all_product_categories.format(**path_params.dict()))
+        r.raise_for_status()
+        return dto.CategoryListResponse(**r.json())
 
-    def create_category(self, body: dto.CategorySavePostRequest) -> dto.CategorySaveResponse:
-        """Update a category"""
-        return self.post(Endpoints.create_or_update_category, body.dict())
-
-    def update_a_category(self, body: dto.CategorySavePostRequest) -> dto.CategorySaveResponse:
-        """Update a category"""
-        return self.post(Endpoints.create_or_update_category, body.dict())
-
-    def view_a_product_categorys_details(self, path_params: dto.CategoryIdPathParams) -> dto.CategoryDetails:
+    def view_product_category_details(self, path_params: dto.CategoryIdPathParams) -> dto.CategoryDetailResponse:
         """View a product categorys details"""
-        return self.get(Endpoints.view_product_category_details.format(**path_params.dict()))
+        r = self.get(Endpoints.view_product_category_details.format(**path_params.dict()))
+        r.raise_for_status()
+        return dto.CategoryDetailResponse(**r.json())
 
     """ Customer """
 
     def list_all_customers(self, path_params: dto.OffsetLimitPathParams) -> dto.CustomerList:
         """List all customers"""
-        return self.get(Endpoints.list_all_customers.format(**path_params.dict()))
+        r = self.get(Endpoints.list_all_customers.format(**path_params.dict()))
+        r.raise_for_status()
+        return dto.CustomerList(**r.json())
 
-    def create_a_update(self, body: dto.CustomerSavePostRequest) -> dto.CustomerSaveResponse:
+    def create_update(self, body: dto.CustomerSavePostRequest) -> dto.CustomerSaveResponse:
         """Create a customer"""
-        return self.post(Endpoints.update_a_customer, body.dict())
+        r = self.post(Endpoints.update_customer, body.dict())
+        r.raise_for_status()
+        return dto.CustomerSaveResponse(**r.json())
 
-    def update_a_customer(self, body: dto.CustomerSavePostRequest) -> dto.CustomerSaveResponse:
+    def update_customer(self, body: dto.CustomerSavePostRequest) -> dto.CustomerSaveResponse:
         """Update a customer"""
-        return self.put(Endpoints.update_a_customer, body.dict())
+        r = self.put(Endpoints.update_customer, body.dict())
+        r.raise_for_status()
+        return dto.CustomerSaveResponse(**r.json())
 
-    def view_a_customers_detail(self, path_params: dto.CustomerIdPathParams) -> None:
+    def view_customers_detail(self, path_params: dto.CustomerIdPathParams) -> None:
         """View a customers detail"""
-        return self.get(Endpoints.view_a_customers_detail.format(**path_params.dict()))
+        r = self.get(Endpoints.view_customers_detail.format(**path_params.dict()))
+        r.raise_for_status()
+        return dto.CustomerDetailResponse(**r.json())
 
     """ Department """
 
     def list_all_departments(self, path_params: dto.OffsetLimitFromDatePathParams) -> None:
         """List all departments"""
-        return self.get(Endpoints.list_all_departments.format(**path_params.dict()))
+        r = self.get(Endpoints.list_all_departments.format(**path_params.dict()))
+        r.raise_for_status()
+        return dto.DepartmentListResponse(**r.json())
 
-    def view_a_department(self, parth_params: dto.DepartmentIdPathParams) -> dto.Department:
-        return self.get(Endpoints.view_a_department.format(**parth_params.dict()))
+    def view_department(self, parth_params: dto.DepartmentIdPathParams) -> dto.Department:
+        r = self.get(Endpoints.view_department.format(**parth_params.dict()))
+        r.raise_for_status()
+        return dto.DepartmentResponse(**r.json())
 
     """ Orders """
 
     def list_all_orders(self, path_params: dto.OffsetLimitFromDatePathParams) -> None:
         """List all orders"""
-        return self.get(Endpoints.list_all_orders.format(**path_params.dict()))
+        r = self.get(Endpoints.list_all_orders.format(**path_params.dict()))
+        r.raise_for_status()
+        return dto.OrderListReponse(**r.json())
 
     def create_new_order_in_backoffice(self) -> None:
         """Create new order in backoffice"""
-        return self.post(Endpoints.create_new_order_in_backoffice)
+        r = self.post(Endpoints.create_new_order_in_backoffice)
+        r.raise_for_status()
+        return dto.OrderNewInBackOfficeResponse(**r.json())
 
     def view_an_order_details(self, path_params: dto.OrderNumberPathParams) -> None:
         """View an order details"""
-        return self.get(Endpoints.view_an_order_details.format(**path_params.dict()))
+        r = self.get(Endpoints.view_an_order_details.format(**path_params.dict()))
+        r.raise_for_status()
+        return dto.OrderDetailResponse(**r.json())
 
     def view_an_orders_detail(self, path_params: dto.IdPathParams) -> None:
         """View an orders detail"""
-        return self.get(Endpoints.view_an_orders_detail.format(**path_params.dict()))
+        r = self.get(Endpoints.view_an_orders_detail.format(**path_params.dict()))
+        r.raise_for_status()
+        return dto.OrderListDetailReponse(**r.json())
 
     """ Product Orders """
 
@@ -173,35 +209,49 @@ class AmendoAPIClient(APIClient):
 
     def adjust_product_stock(self, body: dto.StockAdjustPostRequest = None) -> None:
         """Adjust product stock"""
-        return self.post(Endpoints.adjust_product_stock, body.dict())
+        r = self.post(Endpoints.adjust_product_stock, body.dict())
+        r.raise_for_status()
+        return dto.ProductStockAdjustmentresponse(**r.json())
 
     def fetch_products_stock(self, path_params: dto.ProductIdDepartmentIdPathParams) -> None:
         """Fetch products stock"""
-        return self.get(Endpoints.fetch_products_stock.format(**path_params.dict()))
+        r = self.get(Endpoints.fetch_products_stock.format(**path_params.dict()))
+        r.raise_for_status()
+        return dto.ProductStockResponse(**r.json())
 
     def set_product_stock(self, body: dto.StockSetPostRequest = None) -> None:
         """Set product stock"""
-        return self.post(Endpoints.set_product_stock, body.dict())
+        r = self.post(Endpoints.set_product_stock, body.dict())
+        r.raise_for_status()
+        return dto.ProductStockUpdateResponse(**r.json())
 
     """ Products """
 
     def list_all_product(self, path_params: myshopify.dto.amendo.params.ProductFilter, body: float = None) -> None:
         """List all product"""
-        return self.get(Endpoints.list_all_product.format(**path_params.dict()), body)
+        r = self.get(Endpoints.list_all_product.format(**path_params.dict()), body)
+        r.raise_for_status()
+        return dto.ProductListResponse(**r.json())
 
-    def update_a_product(self) -> None:
+    def update_product(self) -> None:
         """Update a product"""
-        return self.post(Endpoints.update_a_product)
+        r = self.post(Endpoints.update_product)
+        r.raise_for_status()
+        return dto.ProductUpdateRespose(**r.json())
 
-    def view_a_products_detail(self, path_params: dto.ProductIdPathParams) -> None:
+    def view_products_detail(self, path_params: dto.ProductIdPathParams) -> None:
         """View a products detail"""
-        return self.get(Endpoints.view_a_products_detail.format(**path_params.dict()))
+        r = self.get(Endpoints.view_products_detail.format(**path_params.dict()))
+        r.raise_for_status()
+        return dto.ProductDetailResponse(**r.json())
 
     """ Reports """
 
     def list_all_z_reports(self, path_params: dto.OffsetLimitPathParams) -> None:
         """List all z-reports"""
-        return self.get(Endpoints.list_all_z_reports.format(**path_params.dict()))
+        r = self.get(Endpoints.list_all_z_reports.format(**path_params.dict()))
+        r.raise_for_status()
+        return dto.ReportsResponse(**r.json())
 
     """ Sales Report """
 
@@ -209,15 +259,21 @@ class AmendoAPIClient(APIClient):
 
     def list_all_suppliers(self, path_params: dto.OffsetLimitFromDatePathParams) -> None:
         """List all suppliers"""
-        return self.get(Endpoints.list_all_suppliers.format(**path_params.dict()))
+        r = self.get(Endpoints.list_all_suppliers.format(**path_params.dict()))
+        r.raise_for_status()
+        return dto.SupplierListResponse(**r.json())
 
-    def update_a_supplier(self, body: dto.SupplierSavePostRequest = None) -> None:
+    def update_supplier(self, body: dto.SupplierSavePostRequest = None) -> None:
         """Update a supplier"""
-        return self.post(Endpoints.update_a_supplier, body.dict())
+        r = self.post(Endpoints.update_supplier, body.dict())
+        r.raise_for_status()
+        return dto.SupplierUpdateResponse(**r.json())
 
-    def view_a_suppliers_details(self, path_params: dto.SupplierIdPathParams) -> None:
+    def view_suppliers_details(self, path_params: dto.SupplierIdPathParams) -> None:
         """View a suppliers details"""
-        return self.get(Endpoints.view_a_suppliers_details.format(**path_params.dict()))
+        r = self.get(Endpoints.view_suppliers_details.format(**path_params.dict()))
+        r.raise_for_status()
+        return dto.SupplierDetailResponse(**r.json())
 
     """ Variant Group """
 
@@ -225,16 +281,24 @@ class AmendoAPIClient(APIClient):
 
     def list_all_vat_rates(self, path_params: dto.OffsetLimitFromDatePathParams) -> None:
         """List all VAT rates"""
-        return self.get(Endpoints.list_all_vat_rates.format(**path_params.dict()))
+        r = self.get(Endpoints.list_all_vat_rates.format(**path_params.dict()))
+        r.raise_for_status()
+        return dto.VATListAllRatesResponse(**r.json())
 
     def create_new_vat_rate(self, body: dto.VatrateSavePostRequest = None) -> None:
         """Create new VAT rate"""
-        return self.post(Endpoints.create_new_vat_rate, body.dict())
+        r = self.post(Endpoints.create_new_vat_rate, body.dict())
+        r.raise_for_status()
+        return dto.VARNewRateResponse(**r.json())
 
-    def update_a_vat_rate(self, body: dto.VatrateSavePutRequest = None) -> None:
+    def update_vat_rate(self, body: dto.VatrateSavePutRequest = None) -> None:
         """Update a VAT rate"""
-        self.put(Endpoints.update_a_vat_rate, body.dict())
+        r = self.put(Endpoints.update_vat_rate, body.dict())
+        r.raise_for_status()
+        return dto.VARUpdatRateResponse(**r.json())
 
-    def view_a_vat_rates_details(self, path_params: dto.VatRateIdPathParams) -> None:
+    def view_vat_rates_details(self, path_params: dto.VatRateIdPathParams) -> None:
         """View a VAT rates details"""
-        return self.get(Endpoints.view_a_vat_rates_details.format(**path_params.dict()))
+        r = self.get(Endpoints.view_vat_rates_details.format(**path_params.dict()))
+        r.raise_for_status()
+        return dto.VATRateDetailResponse(**r.json())

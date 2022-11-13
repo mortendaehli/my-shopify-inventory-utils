@@ -5,7 +5,7 @@ from typing import List, Optional
 from pydantic import BaseModel
 
 from myshopify.dto.amendo.base import BaseEntity, BaseResponse
-from myshopify.dto.amendo.category import Category, CategorySaveResponseData
+from myshopify.dto.amendo.category import Category, CategoryCreateResponse
 
 
 class Customer(BaseEntity):
@@ -31,13 +31,13 @@ class CustomerSavePostRequest(BaseModel):
 class CustomerSaveResponseData(BaseModel):
     status: bool
     code: int
-    customerData: [Customer]
+    customerData: List[Customer]
     validationMessage: str
 
 
 class CustomerSaveResponse(BaseResponse):
     totalAffected: int
-    data: [CategorySaveResponseData]
+    data: List[CategoryCreateResponse]
 
 
 class CustomerIdPathParams(BaseModel):

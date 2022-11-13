@@ -2,7 +2,7 @@ import logging
 import pathlib
 from typing import Optional
 
-from pydantic import BaseSettings, Field
+from pydantic import BaseSettings
 
 logger = logging.getLogger(__name__)
 
@@ -10,31 +10,27 @@ logger = logging.getLogger(__name__)
 class GlobalConfig(BaseSettings):
     """Global configurations."""
 
-    # define global variables with the Field class
-    ENV_STATE: Optional[str] = Field(None, env="ENV_STATE")
-
-    AMENDO_API_BASE: Optional[str]
     AMENDO_USERNAME: Optional[str]
     AMENDO_PASSWORD: Optional[str]
     AMENDO_API_KEY: Optional[str]
 
-    MINSYMASKIN_SHOPIFY_KEY: str = Field(None, env="MINSYMASKIN_SHOPIFY_KEY")
-    MINSYMASKIN_SHOPIFY_PWD: str = Field(None, env="MINSYMASKIN_SHOPIFY_PWD")
-    MINSYMASKIN_SHOPIFY_NAME: str = Field(None, env="MINSYMASKIN_SHOPIFY_NAME")
+    MINSYMASKIN_SHOPIFY_KEY: Optional[str]
+    MINSYMASKIN_SHOPIFY_PWD: Optional[str]
+    MINSYMASKIN_SHOPIFY_NAME: Optional[str]
 
-    QUILTEFRYD_SHOPIFY_KEY: str = Field(None, env="QUILTEFRYD_SHOPIFY_KEY")
-    QUILTEFRYD_SHOPIFY_PWD: str = Field(None, env="QUILTEFRYD_SHOPIFY_PWD")
-    QUILTEFRYD_SHOPIFY_NAME: str = Field(None, env="QUILTEFRYD_SHOPIFY_NAME")
+    QUILTEFRYD_SHOPIFY_KEY: Optional[str]
+    QUILTEFRYD_SHOPIFY_PWD: Optional[str]
+    QUILTEFRYD_SHOPIFY_NAME: Optional[str]
 
-    FTP_HOST: str = Field(None, env="FTP_HOST")
-    FTP_PORT: str = Field(None, env="FTP_PORT")
-    FTP_USERNAME: str = Field(None, env="FTP_USERNAME")
-    FTP_PASSWORD: str = Field(None, env="FTP_PASSWORD")
+    FTP_HOST: Optional[str]
+    FTP_PORT: Optional[str]
+    FTP_USERNAME: Optional[str]
+    FTP_PASSWORD: Optional[str]
 
-    SQL_PASSWORD: str = Field(None, env="SQL_PASSWORD")
-    SQL_USERNAME: str = Field(None, env="SQL_USERNAME")
-    SQL_PORT: str = Field(None, env="SQL_PORT")
-    SQL_HOST: str = Field(None, env="SQL_HOST")
+    SQL_PASSWORD: Optional[str]
+    SQL_USERNAME: Optional[str]
+    SQL_PORT: Optional[str]
+    SQL_HOST: Optional[str]
 
     class Config:
         """
@@ -48,38 +44,4 @@ class GlobalConfig(BaseSettings):
         env_file_encoding = "utf-8"
 
 
-class DevConfig(GlobalConfig):
-    """Development configurations."""
-
-    class Config:
-        env_prefix: str = "DEV_"
-
-
-class ProdConfig(GlobalConfig):
-    """Production configurations."""
-
-    class Config:
-        env_prefix: str = "PROD_"
-
-
-class FactoryConfig:
-    """Returns a config instance dependending on the ENV_STATE variable."""
-
-    def __init__(self, env_state: Optional[str]):
-        self.env_state = env_state
-
-    def __call__(self):
-        if self.env_state == "DEV":
-            logger.info("Loading DEVELOPMENT environment variables")
-            return DevConfig()
-
-        elif self.env_state == "PROD":
-            logger.info("Loading PRODUCTION environment variables")
-            return ProdConfig()
-
-        else:
-            logger.info("Invalid environment state variables.")
-            raise ValueError
-
-
-config = FactoryConfig(GlobalConfig().ENV_STATE)()
+config = GlobalConfig()

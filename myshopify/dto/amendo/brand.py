@@ -22,7 +22,7 @@ class BrandSaveData(BaseModel):
     status: bool
     code: int
     brandData: Brand
-    validationMessage: str
+    validationMessage: List[str]
 
 
 class BrandCreateBody(BaseModel):
@@ -35,6 +35,7 @@ class BrandUpdateBody(BaseModel):
 
 class BrandCreateResponse(BaseResponse):
     data: List[BrandSaveData]
+    totalAffected: int
 
 
 class BrandUpdateResponse(BaseResponse):
@@ -42,7 +43,7 @@ class BrandUpdateResponse(BaseResponse):
     code: int
     dateTimeBeforeQryExec: datetime
     totalAffected: int
-    data: [BrandSaveData]
+    data: List[BrandSaveData]
 
 
 class BrandViewResponse(BaseResponse):

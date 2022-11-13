@@ -1,5 +1,4 @@
 from .auth import *  # noqa
-from .base import *  # noqa
 from .brand import *  # noqa
 from .category import *  # noqa
 from .customer import *  # noqa

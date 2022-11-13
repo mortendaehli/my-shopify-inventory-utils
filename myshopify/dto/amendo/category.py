@@ -17,25 +17,25 @@ class CategoryListResponse(BaseResponse):
     total_count: int
 
 
-class CategorySavePostRequest(BaseModel):
+class CategoryCreateBody(BaseModel):
     data: List[Category]
 
 
-class CategorySaveResponseData(BaseModel):
+class CategoryCreateResponse(BaseModel):
     status: bool
     code: int
-    categoryData: [Category]
+    categoryData: List[Category]
     validationMessage: str
 
 
 class CategorySaveResponse(BaseResponse):
     totalAffected: int
-    data: [CategorySaveResponseData]
+    data: List[CategoryCreateResponse]
 
 
 class CategoryIdPathParams(BaseModel):
     categoryId: Optional[int]
 
 
-class CategoryDetails(BaseResponse):
+class CategoryDetailResponse(BaseResponse):
     data: Category

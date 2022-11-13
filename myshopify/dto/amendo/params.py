@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
 from enum import Enum
-from typing import Optional
 
 from pydantic import BaseModel
 
@@ -13,46 +11,46 @@ class SortOrder(str, Enum):
 
 
 class OffsetLimitFromDatePathParams(BaseModel):
-    offset: Optional[int]
-    limit: Optional[int]
-    fromDate: Optional[datetime]
+    offset: int
+    limit: int
+    from_date: str
 
 
 class OffsetLimitFromDateSortOrderPathParams(BaseModel):
-    offset: Optional[int]
-    limit: Optional[int]
-    fromDate: Optional[datetime]
-    sortOrder: SortOrder
+    offset: int
+    limit: int
+    from_date: str
+    sort_order: SortOrder
 
 
 class OffsetLimitPathParams(BaseModel):
-    offset: Optional[int]
-    limit: Optional[int]
+    offset: int
+    limit: int
 
 
 class IdPathParams(BaseModel):
-    Id: Optional[int]
+    Id: int
 
 
 class ProductIdDepartmentIdPathParams(BaseModel):
-    product_Id: Optional[int]
-    department_Id: Optional[int]
+    product_Id: int
+    department_Id: int
 
 
 class DepartmentIdPathParams(BaseModel):
-    department_Id: Optional[int]
+    department_Id: int
 
 
 class ProductFilter(BaseModel):
-    offset: Optional[int]
-    limit: Optional[int]
+    offset: int
+    limit: int
     filter_lastUpdateDate: str
-    filter_productId: Optional[int]
+    filter_productId: int
     filter_productName: str
     filter_productNumber: str
     filter_barcode: str
-    filter_isActive: float
-    filter_isDeleted: float
-    filter_isTakeaway: float
-    orderBy: str
-    sortBy: str
+    filter_isActive: bool
+    filter_isDeleted: bool
+    filter_isTakeaway: bool
+    order_by: str
+    sort_by: str
