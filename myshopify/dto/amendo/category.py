@@ -14,7 +14,7 @@ class Category(BaseEntity):
 
 class CategoryListResponse(BaseResponse):
     categories: List[Category]
-    total_count: int
+    totalCount: int
 
 
 class CategoryCreateBody(BaseModel):
@@ -31,10 +31,6 @@ class CategoryCreateResponse(BaseModel):
 class CategorySaveResponse(BaseResponse):
     totalAffected: int
     data: List[CategoryCreateResponse]
-
-
-class CategoryIdPathParams(BaseModel):
-    categoryId: Optional[int]
 
 
 class CategoryDetailResponse(BaseResponse):

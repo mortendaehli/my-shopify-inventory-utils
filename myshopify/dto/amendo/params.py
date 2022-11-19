@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+from datetime import date
 from enum import Enum
+from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, conint
 
 
 class SortOrder(str, Enum):
@@ -11,21 +13,28 @@ class SortOrder(str, Enum):
 
 
 class OffsetLimitFromDatePathParams(BaseModel):
-    offset: int
-    limit: int
-    from_date: str
+    fromDate: Optional[date] = None
+    offset: Optional[int] = None
+    limit: Optional[int] = None
 
 
 class OffsetLimitFromDateSortOrderPathParams(BaseModel):
-    offset: int
-    limit: int
-    from_date: str
-    sort_order: SortOrder
+    fromDate: Optional[date] = None
+    offset: Optional[int] = None
+    limit: Optional[conint(le=50)] = None
+    sortOrder: Optional[SortOrder] = None
+
+
+class OrderStatusLimitOffsetOrderByParams(BaseModel):
+    OrderStatus: Optional[int] = None
+    limit: Optional[int] = None
+    offset: Optional[int] = None
+    orderby: Optional[SortOrder] = None
 
 
 class OffsetLimitPathParams(BaseModel):
-    offset: int
-    limit: int
+    offset: Optional[int] = None
+    limit: Optional[int] = None
 
 
 class IdPathParams(BaseModel):
@@ -33,24 +42,47 @@ class IdPathParams(BaseModel):
 
 
 class ProductIdDepartmentIdPathParams(BaseModel):
-    product_Id: int
-    department_Id: int
+    productId: int
+    departmentId: int
 
 
 class DepartmentIdPathParams(BaseModel):
-    department_Id: int
+    departmentId: int
 
 
 class ProductFilter(BaseModel):
-    offset: int
-    limit: int
-    filter_lastUpdateDate: str
-    filter_productId: int
-    filter_productName: str
-    filter_productNumber: str
-    filter_barcode: str
-    filter_isActive: bool
-    filter_isDeleted: bool
-    filter_isTakeaway: bool
-    order_by: str
-    sort_by: str
+    fromDate: Optional[date] = None
+    offset: Optional[int] = None
+    limit: Optional[int] = None
+    orderBy: Optional[str] = None
+    sortBy: Optional[str] = None
+    departmentIds: Optional[str] = None
+
+
+class CategoryIdPathParams(BaseModel):
+    categoryId: int
+
+
+class CustomerIdPathParams(BaseModel):
+    customerId: int
+
+
+class OrderNumberPathParams(BaseModel):
+    orderNumber: int
+
+
+class ProductIdPathParams(BaseModel):
+    productId: int
+
+
+class ProductIdOrderIdPathParams(BaseModel):
+    productId: int
+    productOrderId: int
+
+
+class SupplierIdPathParams(BaseModel):
+    supplierId: int
+
+
+class VatRateIdPathParams(BaseModel):
+    vatRateId: int

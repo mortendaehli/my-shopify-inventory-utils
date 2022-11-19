@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import List
 
 from pydantic import BaseModel, constr
 
@@ -34,7 +34,3 @@ class ProductListResponse(BaseResponse):
 
 class ProductPostBody(BaseModel):
     data: List[Product]
-
-
-class ProductIdPathParams(BaseModel):
-    productId: Optional[int]

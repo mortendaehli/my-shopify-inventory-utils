@@ -1,25 +1,64 @@
 from __future__ import annotations
 
-from typing import Optional
+from datetime import date
+from typing import List, Union
 
 from pydantic import BaseModel
 
-
-class Data(BaseModel):
-    adjust_stock_quantity: Optional[float] = None
-    department_id: Optional[float] = None
-    product_id: Optional[float] = None
+from myshopify.dto.amendo.base import BaseResponse
 
 
-class StockAdjustPostRequest(BaseModel):
-    data: Optional[Data] = None
+class ProductStockAddData(BaseModel):
+    department_id: int
+    products: List[ProductStock]
 
 
-class Data1(BaseModel):
-    department_id: Optional[float] = None
-    product_id: Optional[float] = None
-    stock_quantity: Optional[float] = None
+class ProductStockAddRequestBody(BaseModel):
+    data: ProductStockAddData
 
 
-class StockSetPostRequest(BaseModel):
-    data: Optional[Data1] = None
+class ProductStockAddResponseBody(ProductStockAddData):
+    productOrderId: int
+
+
+class ProductStockAddResponse(BaseModel):
+    data: ProductStockAddResponseBody
+
+
+class ProductStockAdjustResponse(BaseResponse):
+    stockQuantity: int
+
+
+class ProductStockAdjustPostRequestData(BaseModel):
+    department_id: int
+    product_id: int
+    adjust_stock_quantity: int
+
+
+class ProductStockAdjustPostRequestRequest(BaseModel):
+    data: ProductStockAdjustPostRequestData
+
+
+class StockAllProductInfoParams(BaseModel):
+    stockDepartment: int
+    fromDate: date
+
+
+class StockAllProductInfoRequestBody(BaseModel):
+    params: StockAllProductInfoParams
+
+
+class ProductStock(BaseModel):
+    productId: int
+    productNumber: int
+    stockQuantity: int
+
+
+class ProductVariantStock(BaseModel):
+    productId: int
+    productNumber: int
+    childProducts: List[ProductStock]
+
+
+class StockAllProductInfoResponseBody(BaseResponse):
+    productDetails: List[Union[ProductStock, ProductVariantStock]]

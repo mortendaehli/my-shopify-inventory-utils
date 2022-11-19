@@ -1,7 +1,6 @@
 import io
 import logging
-# import ssl
-# ssl._create_default_https_context = ssl._create_unverified_context
+import ssl
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from time import sleep
@@ -35,6 +34,8 @@ from myshopify.dto.types import (
     ShopifyInventoryPolicy,
     ShopifyProductStatus,
 )
+
+ssl._create_default_https_context = ssl._create_unverified_context
 
 logging.getLogger("pyactiveresource").setLevel("WARNING")
 logging.getLogger("PIL").setLevel("WARNING")

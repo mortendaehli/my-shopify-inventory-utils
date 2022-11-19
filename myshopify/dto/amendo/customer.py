@@ -5,18 +5,17 @@ from typing import List, Optional
 from pydantic import BaseModel
 
 from myshopify.dto.amendo.base import BaseEntity, BaseResponse
-from myshopify.dto.amendo.category import Category, CategoryCreateResponse
 
 
 class Customer(BaseEntity):
-    customerId: int
-    name: str
-    address: str
-    zip: str
-    location: str
-    phoneNumber: str
-    email: str
-    country: str
+    customerId: Optional[int]
+    name: str  # Fixme: this is wrong in the documentation. It says CustomerName
+    address: Optional[str]
+    zip: Optional[str]
+    location: Optional[str]
+    phoneNumber: Optional[str]
+    email: Optional[str]
+    country: Optional[str]
 
 
 class CustomerList(BaseResponse):
@@ -25,7 +24,11 @@ class CustomerList(BaseResponse):
 
 
 class CustomerSavePostRequest(BaseModel):
-    data: List[Category]
+    data: List[Customer]
+
+
+class CustomerUpdatePostRequest(BaseModel):
+    data: Customer
 
 
 class CustomerSaveResponseData(BaseModel):
@@ -37,8 +40,8 @@ class CustomerSaveResponseData(BaseModel):
 
 class CustomerSaveResponse(BaseResponse):
     totalAffected: int
-    data: List[CategoryCreateResponse]
+    data: List[CustomerSaveResponseData]
 
 
-class CustomerIdPathParams(BaseModel):
-    customerId: Optional[int]
+class CustomerViewResponse(BaseResponse):
+    data: Customer

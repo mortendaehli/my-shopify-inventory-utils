@@ -10,7 +10,9 @@ class BaseResponse(BaseModel):
     status: bool
     message: Optional[str]
     code: Union[int, List[int]]
-    dateTimeBeforeQryExec: datetime
+    dateTimeBeforeQryExec: Optional[
+        str
+    ]  # Fixme: This should be YYYY-MM-DD HH:MM:SS, but somehow it is Norwegian format...
 
 
 class BaseEntity(BaseModel):

@@ -22,7 +22,3 @@ class Datum4(BaseModel):
 
 class VatrateSavePutRequest(BaseModel):
     data: Optional[List[Datum4]] = None
-
-
-class VatRateIdPathParams(BaseModel):
-    vatRateId: Optional[int]

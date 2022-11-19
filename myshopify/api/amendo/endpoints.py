@@ -3,36 +3,71 @@ from apiclient.decorates import endpoint
 
 @endpoint(base_url="https://api.tellix.no/web/v3/")
 class Endpoints:
-    list_all_brands: str = "/brand/list?offset={offset}&limit={limit}&from_date={from_date}"
-    create_or_update_brand: str = "/brand/save"
-    view_brands_details: str = "/brand/view?brandId={brand_id}"
-
-    list_all_product_categories: str = (
-        "/category/list?offset={offset}&limit={limit}&from_date={from_date}&sort_order={sort_order}"
-    )
-    create_or_update_category: str = "/category/save"
-    view_product_category_details: str = "/category/view?categoryId={category_id}"
-    list_all_customers: str = "/customer/list?offset={offset}&limit={limit}"
-    update_customer: str = "/customer/save"
-    view_customers_detail: str = "/customer/view?customerId={customer_id}"
-    view_department: str = "/department/info/departmentId={department_id}"
-    list_all_departments: str = "/department/list?offset={offset}&limit={limit}&from_date={from_date}"
+    # Auth
     generate_token: str = "/getaccesstoken"
-    list_all_orders: str = "/order/list?offset={offset}&limit={limit}&from_date={from_date}"
-    create_new_order_in_backoffice: str = "/order/orderhandling/save"
-    view_an_order_details: str = "/order/orderhandling/view?orderNumber={order_number}"
-    view_an_orders_detail: str = "/order/{id}"
-    list_all_product: str = "/product/list?offset={offset}&limit={limit}&filter[lastUpdateDate]={filter_last_update_date}&filter[productId]={filter_product_id}&filter[productName]={filter_product_name}&filter[productNumber]={filter_product_number}&filter[barcode]={filter_barcode}&from_date={from_date}&catgeoryId={catgeory_id}&filter[isActive]={filter_is_active}&filter[isDeleted]={filter_is_deleted}&filter[isTakeaway]={filter_is_takeaway}&order_by={order_by}&sort_by={sort_by}"
-    update_product: str = "/product/save"
-    view_products_detail: str = "/product/view?productId={product_id}"
-    adjust_product_stock: str = "/stock/adjust"
-    fetch_products_stock: str = "/stock/info?product_id={product_id}&department_id={department_id}"
-    set_product_stock: str = "/stock/set"
-    list_all_suppliers: str = "/supplier/list?offset={offset}&limit={limit}&from_date={from_date}"
-    update_supplier: str = "/supplier/save"
-    view_suppliers_details: str = "/supplier/view?supplierId={supplier_id}"
-    list_all_vat_rates: str = "/vatrate/list?offset={offset}&limit={limit}&from_date={from_date}"
-    create_new_vat_rate: str = "/vatrate/save"
-    update_vat_rate: str = "/vatrate/save"
-    view_vat_rates_details: str = "/vatrate/view?vatRateId={vat_rate_id}"
-    list_all_z_reports: str = "/zreport/list?offset={offset}&limit={limit}"
+
+    # Brand
+    brand_list_all: str = "/brand/list"
+    brand_create_or_update: str = "/brand/save"
+    brand_view_details: str = "/brand/view"
+
+    # Product category
+    product_category_list_all: str = "/category/list"
+    product_category_create_or_update: str = "/category/save"
+    product_category_view_details: str = "/category/view"
+
+    # Customer
+    customer_list_all: str = "/customer/list"
+    customer_create_or_update: str = "/customer/save"
+    customer_update_by_id: str = "/customer/update/{id}"
+    customer_view_details: str = "/customer/view"
+
+    # Department
+    department_view_info: str = "/department/info"
+    department_list_all: str = "/department/list"
+
+    # Order
+    order_list_all: str = "/order/list"
+    order_in_back_office_create: str = "/order/orderhandling/save"
+    order_in_back_office_view_details: str = "/order/orderhandling/view"
+    order_view_details_by_id: str = "/order/{id}"
+
+    # Product Orders
+    products_order_info: str = "/products-order/info"
+
+    # Stock
+    product_stock_list_all: str = "/allproducts/stock/info"
+    product_stock_add_receive: str = "/product-receive/add"
+    product_stock_adjust: str = "/stock/adjust"
+    product_stock_view: str = "/stock/info"
+    product_stock_set: str = "/stock/set"
+    product_stock_update: str = "/stock/update"
+    product_stock_module_status: str = "/stockmodule/status"
+
+    # Products
+    product_list_all: str = "/product/list"
+    product_create_or_update: str = "/product/save"
+    product_update_by_id: str = "/product/update{id}"
+    product_update_updated_at: str = "/product/updateUpdatedAt"
+    product_variant_create: str = "/product/variant"
+    product_view_details: str = "/product/view"
+
+    # Report
+    report_list_all_z: str = "/zreport/list"
+
+    # Sales report
+    sales_report_list_all: str = "/salesreport/list"
+
+    # Supplier
+    supplier_list_all: str = "/supplier/list"
+    supplier_create_or_update: str = "/supplier/save"
+    supplier_view_details: str = "/supplier/view"
+
+    # Variant group
+    variant_group_list_all: str = "/variantgroup/list"
+    variant_group_create_or_update: str = "/variantgroup/save"
+
+    # VAT rate
+    var_rate_list_all: str = "/vatrate/list"
+    vat_rate_create_or_update: str = "/vatrate/save"
+    var_rate_view_details: str = "/vatrate/view"

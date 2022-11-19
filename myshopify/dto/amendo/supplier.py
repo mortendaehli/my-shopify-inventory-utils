@@ -22,7 +22,3 @@ class Supplier(BaseModel):
 
 class SupplierSavePostRequest(BaseModel):
     data: Optional[List[Supplier]] = None
-
-
-class SupplierIdPathParams(BaseModel):
-    supplierId: Optional[int]
