@@ -8,9 +8,14 @@ from pydantic import BaseModel
 from myshopify.dto.amendo.base import BaseResponse
 
 
+class ProductStockAddProductData(BaseModel):
+    productId: int
+    productCount: int
+
+
 class ProductStockAddData(BaseModel):
     department_id: int
-    products: List[ProductStock]
+    products: List[ProductStockAddProductData]
 
 
 class ProductStockAddRequestBody(BaseModel):
@@ -35,8 +40,18 @@ class ProductStockAdjustPostRequestData(BaseModel):
     adjust_stock_quantity: int
 
 
-class ProductStockAdjustPostRequestRequest(BaseModel):
+class ProductStockSetPostRequestData(BaseModel):
+    department_id: int
+    product_id: int
+    stock_quantity: int
+
+
+class ProductStockAdjustPostRequest(BaseModel):
     data: ProductStockAdjustPostRequestData
+
+
+class ProductStockSetPostRequest(BaseModel):
+    data: ProductStockSetPostRequestData
 
 
 class StockAllProductInfoParams(BaseModel):
@@ -54,6 +69,12 @@ class ProductStock(BaseModel):
     stockQuantity: int
 
 
+class ProductStockUpdateData(BaseModel):
+    stockDepartment: int
+    productNumber: int
+    stockQuantity: int
+
+
 class ProductVariantStock(BaseModel):
     productId: int
     productNumber: int
@@ -62,3 +83,7 @@ class ProductVariantStock(BaseModel):
 
 class StockAllProductInfoResponseBody(BaseResponse):
     productDetails: List[Union[ProductStock, ProductVariantStock]]
+
+
+class ProductStockUpdateRequestBody(BaseModel):
+    params: ProductStockUpdateData

@@ -21,15 +21,15 @@ class OffsetLimitFromDatePathParams(BaseModel):
 class OffsetLimitFromDateSortOrderPathParams(BaseModel):
     fromDate: Optional[date] = None
     offset: Optional[int] = None
-    limit: Optional[conint(le=50)] = None
-    sortOrder: Optional[SortOrder] = None
+    limit: Optional[conint(le=50)] = 50
+    sortOrder: Optional[SortOrder] = SortOrder.ASC
 
 
 class OrderStatusLimitOffsetOrderByParams(BaseModel):
     OrderStatus: Optional[int] = None
-    limit: Optional[int] = None
+    limit: Optional[int] = 50
     offset: Optional[int] = None
-    orderby: Optional[SortOrder] = None
+    orderby: Optional[SortOrder] = SortOrder.ASC
 
 
 class OffsetLimitPathParams(BaseModel):
@@ -38,7 +38,7 @@ class OffsetLimitPathParams(BaseModel):
 
 
 class IdPathParams(BaseModel):
-    Id: int
+    id: int
 
 
 class ProductIdDepartmentIdPathParams(BaseModel):
@@ -77,7 +77,7 @@ class ProductIdPathParams(BaseModel):
 
 class ProductIdOrderIdPathParams(BaseModel):
     productId: int
-    productOrderId: int
+    productOrderId: Optional[int]
 
 
 class SupplierIdPathParams(BaseModel):

@@ -47,9 +47,9 @@ class Endpoints:
     # Products
     product_list_all: str = "/product/list"
     product_create_or_update: str = "/product/save"
-    product_update_by_id: str = "/product/update{id}"
+    product_update_by_id: str = "/product/update/{id}"
     product_update_updated_at: str = "/product/updateUpdatedAt"
-    product_variant_create: str = "/product/variant"
+    product_variant_create_or_update: str = "/product/variant"
     product_view_details: str = "/product/view"
 
     # Report
