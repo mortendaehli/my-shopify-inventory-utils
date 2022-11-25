@@ -120,7 +120,7 @@ class Product(BaseModel):
     title: Optional[str]
     body_html: Optional[str]
     images: Optional[List[Any]]
-    options: Optional[Dict[str, Any]]
+    options: Optional[List[Any]]
     product_type: Optional[str]
     status: Optional[ShopifyProductStatus]
     tags: Optional[str]  # string "array" with comma

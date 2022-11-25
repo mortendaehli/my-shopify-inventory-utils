@@ -1,24 +1,36 @@
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from pydantic import BaseModel
 
+from myshopify.dto.amendo.base import BaseEntity, BaseResponse
 
-class VATRate(BaseModel):
-    isActive: bool
+
+class VATRate(BaseEntity):
+    vatRateId: int
+    vatRateTitle: Optional[str]
     vatRatePercent: float
+    isDefault: bool
 
 
-class VatrateSavePostRequest(BaseModel):
-    data: Optional[List[VATRate]] = None
+class VATRateListAllResponse(BaseModel):
+    vatRates: List[VATRate]
+    totalCount: int
 
 
-class Datum4(BaseModel):
-    isActive: bool
-    vatRateId: Optional[int]
-    vatRatePercent: float
+class VATRateCreateOrUpdateRequestBody(BaseModel):
+    data: List[VATRate]
 
 
-class VatrateSavePutRequest(BaseModel):
-    data: Optional[List[Datum4]] = None
+class VATRateCreateOrUpdateResponseData(BaseResponse):
+    vatRateData: VATRate
+    validationMessage: Any
+
+
+class VATRateCreateOrUpdateResponse(BaseModel):
+    data: List[VATRateCreateOrUpdateResponseData]
+
+
+class VATRateViewDetailsResponse(BaseResponse):
+    data: VATRate

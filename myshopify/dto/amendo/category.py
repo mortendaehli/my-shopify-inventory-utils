@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, List, Optional, Union
+from typing import Any, List, Optional
 
 from pydantic import BaseModel
 
@@ -24,7 +24,7 @@ class CategoryCreateBody(BaseModel):
 class CategoryCreateResponse(BaseModel):
     status: bool
     code: int
-    categoryData: Union[Category, List[Category]]
+    categoryData: Category
     validationMessage: List[Any]
 
 

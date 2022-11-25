@@ -22,7 +22,7 @@ class TestAmendoAPIClient:
         assert isinstance(response, dto.BrandList)
 
     def test_create_new_brand(self):
-        brand = dto.Brand(brandId=1, brandName="Test brand", isActive=False)
+        brand = dto.Brand(brandId=1, brandName="Test brand 1", isActive=True, isDeleted=False)
         response = self.api.brand_create_or_update(body=dto.BrandCreateBody(data=[brand]))
         assert isinstance(response, dto.BrandCreateResponse)
 
@@ -35,7 +35,7 @@ class TestAmendoAPIClient:
         assert isinstance(response, dto.CategoryListResponse)
 
     def test_category_create_or_update(self):
-        category = dto.Category(categoryId=1, categoryName="Test category", isActive=False)
+        category = dto.Category(categoryId=1, categoryName="Test category 1", isActive=True, isDeleted=False)
         response = self.api.category_create_or_update(body=dto.CategoryCreateBody(data=[category]))
         assert isinstance(response, dto.CategorySaveResponse)
 
@@ -50,7 +50,9 @@ class TestAmendoAPIClient:
     def test_customer_create_or_update(self):
         response = self.api.customer_create_or_update(
             body=dto.CustomerSavePostRequest(
-                data=[dto.Customer(customerId=1, name="Test Customer", country="Norway", isActive=False)]
+                data=[
+                    dto.Customer(customerId=1, name="Test Customer 1", country="Norway", isActive=True, isDeleted=False)
+                ]
             )
         )
         assert isinstance(response, dto.CustomerSaveResponse)
@@ -61,7 +63,7 @@ class TestAmendoAPIClient:
             customer_id=1,
             body=dto.CustomerUpdatePostRequest(
                 data=dto.Customer(
-                    name="Test Customer", email="test@mail.com", country="Norway", isActive=False, isDeleted=False
+                    name="Test Customer 1", email="test@mail.com", country="Norway", isActive=True, isDeleted=False
                 )
             ),
         )
@@ -196,18 +198,21 @@ class TestAmendoAPIClient:
                 data=[
                     dto.Product(
                         productId=1,
-                        productName="Test product",
-                        productNumber="testproductnumber1",
+                        productName="Test Product 1",
+                        productNumber="1",
                         categoryId=1,
+                        supplierId=1,
+                        departmentId=1,
+                        brandId=1,
                         priceIncVat=1.0,
                         barcode="testproductbarcode1",
-                        brandId=1,
                         description="test product description",
-                        costPrice=1,
-                        vatRatePercent=25,
+                        costPrice=0.5,
+                        vatRatePercent=10,
                         isTakeaway=False,
                         stockControl=True,
-                        isActive=False,
+                        isActive=True,
+                        isDeleted=False,
                         showOnWeb=False,
                     )
                 ]
@@ -219,19 +224,20 @@ class TestAmendoAPIClient:
         response = self.api.product_update_by_id(
             body=dto.ProductUpdateByIdRequestBody(
                 data=dto.Product(
-                    productId=1,
-                    productName="Test product",
-                    productNumber="testproductnumber1",
+                    productId=3,
+                    productName="Test product 3",
+                    productNumber="3",
                     categoryId=1,
                     priceIncVat=1.0,
-                    barcode="testproductbarcode1",
+                    barcode="Test Bar Code 3",
                     brandId=1,
-                    description="test product description",
+                    description="test product description 3",
                     costPrice=1,
                     vatRatePercent=25,
                     isTakeaway=False,
                     stockControl=True,
-                    isActive=False,
+                    isActive=True,
+                    isDeleted=False,
                     showOnWeb=False,
                 )
             ),
@@ -246,16 +252,17 @@ class TestAmendoAPIClient:
                 data=[
                     dto.ProductVariant(
                         parentId=1,
-                        productNumber="testproductnumbervariant1",
+                        productNumber="1",
                         barcode="testproductbarcodevariant1",
-                        isActive=False,
+                        isActive=True,
+                        isDeleted=False,
                         showOnWeb=False,
                         attributes=[
                             {"variant-group": "Colors", "variant-value": "Red"},
                             {"variant-group": "Size", "variant-value": "Small"},
                         ],
                         departments=[
-                            dto.ProductVariantDepartment(
+                            dto.ProductDepartment(
                                 departmentId=1,
                                 stockQuantity=1,
                                 incPrice=1.0,
@@ -268,10 +275,9 @@ class TestAmendoAPIClient:
         )
         assert isinstance(response, dto.ProductVariantPostResponse)
 
-    @pytest.mark.skip(reason="400 Error: Bad Request for url: https://api.tellix.no/web/v3/product/view?productId=1")
     def test_product_view_details(self):
-        response = self.api.product_view_details(path_params=dto.ProductIdPathParams(productId=1))
-        assert isinstance(response, dto.CustomerViewResponse)
+        response = self.api.product_view_details(path_params=dto.ProductIdPathParams(productId=3))
+        assert isinstance(response, dto.ProductViewDetailsResponse)
 
     def test_report_list_all_z(self):
         response = self.api.report_list_all_z(path_params=dto.OffsetLimitPathParams(limit=50))
@@ -279,7 +285,7 @@ class TestAmendoAPIClient:
 
     def test_report_sales(self):
         response = self.api.report_sales(path_params=dto.OffsetLimitPathParams(limit=50))
-        assert isinstance(response, dto.ZReportResponse)
+        assert isinstance(response, dto.SalesReportResponse)
 
     def test_supplier_list_all(self):
         response = self.api.supplier_list_all(
@@ -288,7 +294,7 @@ class TestAmendoAPIClient:
         assert isinstance(response, dto.SupplierListAllResponse)
 
     def test_supplier_create_or_update(self):
-        supplier = dto.Supplier(supplierId=1, supplierName="Test brand")
+        supplier = dto.Supplier(supplierId=1, supplierName="Test supplier 1")
         response = self.api.supplier_create_or_update(body=dto.SupplierCreateOrUpdateBody(data=[supplier]))
         assert isinstance(response, dto.SupplierCreateOrUpdateResponse)
 
@@ -297,6 +303,37 @@ class TestAmendoAPIClient:
         response = self.api.supplier_view_details(path_params=dto.SupplierIdPathParams(supplierId=1))
         assert isinstance(response, dto.SupplierViewDetailsResponse)
 
-    def test_(self):
-        response = self.api.products_order_info()
-        assert isinstance(response, dto.ProductsOrderInfoResponse)
+    @pytest.mark.skip(reason="400 Error: Bad Request for url")
+    def test_variant_group_list_all(self):
+        response = self.api.variant_group_list_all(
+            path_params=dto.OffsetLimitFromDateSortOrderPathParams(fromDate=date(2020, 1, 1), offset=0, limit=50)
+        )
+        assert isinstance(response, dto.VariantGroupListAllResponse)
+
+    @pytest.mark.skip(reason="422 Error: Unprocessable Entity for url")
+    def test_variant_group_create_or_update(self):
+        variant_group = dto.VariantGroupCreateOrUpdateBody(
+            data=dto.VariantGroupData(
+                variantGroupId=1,
+                variantGroupName="Test variant group 1",
+                variantValues=[dto.VariantValue(variantValueId=1, variantValue="Test value 1")],
+            )
+        )
+        response = self.api.variant_group_create_or_update(body=variant_group)
+        assert isinstance(response, dto.VariantGroupCreateOrUpdateResponse)
+
+    @pytest.mark.skip(reason="400 Error: Bad Request for url: https://api.tellix.no/web/v3/vatrate/list")
+    def test_var_rate_list_all(self):
+        response = self.api.vat_rate_list_all(path_params=dto.OffsetLimitFromDateSortOrderPathParams())
+        assert isinstance(response, dto.VATRateListAllResponse)
+
+    def test_vat_rate_create_or_update(self):
+        vat_rate = dto.VATRateCreateOrUpdateRequestBody(
+            data=[dto.VATRate(vatRateId=1, vatRateTitle="Test VAT rate 1", vatRatePercent=25, isDefault=False)]
+        )
+        response = self.api.vat_rate_create_or_update(body=vat_rate)
+        assert isinstance(response, dto.VATRateCreateOrUpdateResponse)
+
+    def test_view_product_vat_rate_details(self):
+        response = self.api.vat_rate_view_details(path_params=dto.VatRateIdPathParams(vatRateId=1))
+        assert isinstance(response, dto.VATRateViewDetailsResponse)

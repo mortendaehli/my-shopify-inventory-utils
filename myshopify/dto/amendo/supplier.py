@@ -31,7 +31,7 @@ class SupplierListAllResponse(BaseResponse):
 
 
 class SupplierCreateOrUpdateResponseData(BaseResponse):
-    brandData: Supplier
+    supplierData: Supplier
     validationMessage: List[Any]
 
 

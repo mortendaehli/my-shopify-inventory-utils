@@ -172,7 +172,7 @@ class AmendoAPIClient(APIClient):
         r.raise_for_status()
         return dto.CustomerSaveResponse(**r.json())
 
-    def customer_update_by_id(self, body: dto.CustomerUpdatePostRequest, customer_id: int) -> dto.BaseResponse:
+    def customer_update_by_id(self, body: dto.CustomerUpdatePostRequest, customer_id: int) -> dto.CustomerSaveResponse:
         """Update a customer"""
         r = self.put(Endpoints.customer_update_by_id.format(id=customer_id), data=body.dict(exclude_unset=True))
         r.raise_for_status()
@@ -326,15 +326,15 @@ class AmendoAPIClient(APIClient):
         r.raise_for_status()
         return dto.ProductVariantPostResponse(**r.json())
 
-    def product_view_details(self, path_params: dto.ProductIdPathParams) -> dto.BaseResponse:
+    def product_view_details(self, path_params: dto.ProductIdPathParams) -> dto.ProductViewDetailsResponse:
         """View a products detail"""
         r = self.get(Endpoints.product_view_details, params=path_params.dict(exclude_unset=True))
         r.raise_for_status()
-        return dto.ProductDetailResponse(**r.json())
+        return dto.ProductViewDetailsResponse(**r.json())
 
     """ Reports """
 
-    def report_list_all_z(self, path_params: dto.OffsetLimitPathParams) -> dto.BaseResponse:
+    def report_list_all_z(self, path_params: dto.OffsetLimitPathParams) -> dto.ZReportResponse:
         """List all z-reports"""
         r = self.get(Endpoints.report_list_all_z, params=path_params.dict(exclude_unset=True))
         r.raise_for_status()
@@ -342,7 +342,7 @@ class AmendoAPIClient(APIClient):
 
     """ Sales Report """
 
-    def report_sales(self, path_params: dto.OffsetLimitPathParams) -> dto.BaseResponse:
+    def report_sales(self, path_params: dto.OffsetLimitPathParams) -> dto.SalesReportResponse:
         """Report sales"""
         r = self.get(Endpoints.sales_report_list_all, params=path_params.dict(exclude_unset=True))
         r.raise_for_status()
@@ -372,34 +372,38 @@ class AmendoAPIClient(APIClient):
 
     def variant_group_list_all(
         self, path_params: dto.OffsetLimitFromDateSortOrderPathParams
-    ) -> dto.SupplierViewDetailsResponse:
+    ) -> dto.VariantGroupListAllResponse:
         """List all variant_groups"""
-        r = self.get(Endpoints.variant_group_list_all, params=path_params.dict(exclude_unset=True))
+        r = self.post(Endpoints.variant_group_list_all, params=path_params.dict(exclude_unset=True), data={})
         r.raise_for_status()
-        return dto.SupplierViewDetailsResponse(**r.json())
+        return dto.VariantGroupListAllResponse(**r.json())
 
-    def variant_group_create_or_update(self, body: dto.SupplierViewDetailsResponse) -> dto.SupplierViewDetailsResponse:
+    def variant_group_create_or_update(
+        self, body: dto.VariantGroupCreateOrUpdateBody
+    ) -> dto.VariantGroupCreateOrUpdateResponse:
         """Update a variant_group"""
         r = self.post(Endpoints.variant_group_create_or_update, data=body.dict(exclude_unset=True))
         r.raise_for_status()
-        return dto.SupplierViewDetailsResponse(**r.json())
+        return dto.VariantGroupCreateOrUpdateResponse(**r.json())
 
     """ VAT rate """
 
-    def var_rate_list_all(self, path_params: dto.OffsetLimitFromDatePathParams) -> dto.BaseResponse:
+    def vat_rate_list_all(self, path_params: dto.OffsetLimitFromDateSortOrderPathParams) -> dto.VATRateListAllResponse:
         """List all VAT rates"""
-        r = self.get(Endpoints.var_rate_list_all, params=path_params.dict(exclude_unset=True))
+        r = self.post(Endpoints.var_rate_list_all, params=path_params.dict(exclude_unset=True), data={})
         r.raise_for_status()
-        return dto.VATListAllRatesResponse(**r.json())
+        return dto.VATRateListAllResponse(**r.json())
 
-    def vat_rate_create_or_update(self, body: dto.VatrateSavePostRequest) -> dto.BaseResponse:
+    def vat_rate_create_or_update(
+        self, body: dto.VATRateCreateOrUpdateRequestBody
+    ) -> dto.VATRateCreateOrUpdateResponse:
         """Create new VAT rate"""
         r = self.post(Endpoints.vat_rate_create_or_update, data=body.dict(exclude_unset=True))
         r.raise_for_status()
-        return dto.VARNewRateResponse(**r.json())
+        return dto.VATRateCreateOrUpdateResponse(**r.json())
 
-    def var_rate_view_details(self, path_params: dto.VatRateIdPathParams) -> dto.BaseResponse:
+    def vat_rate_view_details(self, path_params: dto.VatRateIdPathParams) -> dto.VATRateViewDetailsResponse:
         """View a VAT rates details"""
         r = self.get(Endpoints.var_rate_view_details, params=path_params.dict(exclude_unset=True))
         r.raise_for_status()
-        return dto.VATRateDetailResponse(**r.json())
+        return dto.VATRateViewDetailsResponse(**r.json())

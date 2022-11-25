@@ -8,10 +8,12 @@ WITH Products AS (SELECT
                       art.ArticleNo                                                                                                                                                   AS sku,
                       art.ArticleID                                                                                                                                                   AS source_id,
                       art.LastUpdate                                                                                                                                                  AS source_updated,
+                      art.PurchasePrice                                                                                                                                               AS purchase_price,
+                      IIF(grp.MainGroupID = 10, 0, 25)                                                                                                                                AS vat_rate,
                       IIF(grp.MainGroupID = 10, CAST(art.SalesPrice AS FLOAT), CAST(art.SalesPrice AS FLOAT) * 1.25)                                                                  AS price,
-                      LOWER(IIF(art.PriceUnit IS NULL or art.PriceUnit = '', 'stk', art.PriceUnit)   )                                                                                                                                         AS price_unit,
+                      LOWER(IIF(art.PriceUnit IS NULL or art.PriceUnit = '', 'stk', art.PriceUnit))                                                                                   AS price_unit,
                       IIF(art.PriceUnit LIKE 'meter%', FLOOR((CAST(ISNULL(rec.C, 0) AS FLOAT) - CAST(ISNULL(sol.C, 0) AS FLOAT)) * 10.0), FLOOR(ISNULL(rec.C, 0) - ISNULL(sol.C, 0))) AS available,
-                      IIF(web1.Name LIKE '%symaskin%' OR grp.Name LIKE '%symaskine%', 0, 1)                                                                                      AS hide_when_empty,
+                      IIF(web1.Name LIKE '%symaskin%' OR grp.Name LIKE '%symaskine%', 0, 1)                                                                                           AS hide_when_empty,
                       CASE WHEN art.OfferPrice > 0 THEN IIF(grp.MainGroupID = 10, CAST(art.OfferPrice AS FLOAT), CAST(art.OfferPrice AS FLOAT) * 1.25) END                            AS discounted_price,
                       art.StartOfferPrice                                                                                                                                             AS discount_start,
                       art.StopOfferPrice                                                                                                                                              AS discount_end,
@@ -26,8 +28,7 @@ WITH Products AS (SELECT
                           WHEN web1.Name LIKE N'bøker%blader%' THEN N'Bøker og blader'
                           WHEN web1.Name LIKE N'Symaskin%' OR web1.Name LIKE N'Symaskintilbehør%' OR art.Name LIKE '%janome%' THEN N'Symaskiner'
                           WHEN web1.Name LIKE N'Tråd og broderigarn%' OR web1.Name LIKE N'Tråd%' OR web1.Name LIKE 'Broderigarn' THEN N'Tråd og broderigarn'
-                          WHEN web1.Name LIKE N'Vatt og stabilisering%' OR web1.Name LIKE 'Vatt%' OR web1.Name LIKE 'Stabilisering%' THEN N'Vatt og stabilisering'
-                          END                                                                                                                    AS product_category,
+                          WHEN web1.Name LIKE N'Vatt og stabilisering%' OR web1.Name LIKE 'Vatt%' OR web1.Name LIKE 'Stabilisering%' THEN N'Vatt og stabilisering' END                AS product_category,
 
                       -- Product group 1
                       CASE
@@ -71,8 +72,7 @@ WITH Products AS (SELECT
 
                           -- Vatt og stabilisering
                           WHEN web1.Name LIKE 'Vatt%' OR (web1.Name LIKE N'Vatt og stabilisering%' AND art.Name LIKE '%vatt%') THEN N'Vatt'
-                          WHEN web1.Name LIKE 'stabilisering%' OR (web1.Name LIKE N'Vatt og stabilisering%' AND art.Name LIKE '%stabilisering%') THEN N'Stabilisering'
-                          END                                                                                                                    AS product_group1,
+                          WHEN web1.Name LIKE 'stabilisering%' OR (web1.Name LIKE N'Vatt og stabilisering%' AND art.Name LIKE '%stabilisering%') THEN N'Stabilisering' END            AS product_group1,
 
                       -- Product group 2
                       CASE
@@ -98,8 +98,10 @@ WITH Products AS (SELECT
 
                           -- Tilbehør
                           WHEN web2.Name LIKE N'Knappenål%' OR ((web1.Name LIKE N'Tilbehør' OR web2.Name LIKE N'nål%') AND (art.Name LIKE N'%knappenål%' OR web2.Name LIKE N'Knappenål%' OR web3.Name LIKE N'knappenål%')) THEN N'Knappenåler'
-                          WHEN web2.Name LIKE N'Håndsømnål%' OR ((web1.Name LIKE N'Tilbehør' OR web2.Name LIKE N'nål%') AND (art.Name LIKE N'%Håndsømnål%' OR web2.Name LIKE N'Håndsømnål%' OR art.Name LIKE N'%håndsøm%nål%')) THEN N'Håndsømnåler'
-                          WHEN web2.Name LIKE N'Broderinål%' OR ((web1.Name LIKE N'Tilbehør' OR web2.Name LIKE N'nål%') AND (art.Name LIKE '%embroider%needle%' OR art.Name LIKE N'%broderinål%') AND NOT art.ArticleID IN (44644)) THEN N'Broderinåler'
+                          WHEN web2.Name LIKE N'Håndsømnål%' OR ((web1.Name LIKE N'Tilbehør' OR web2.Name LIKE N'nål%') AND (art.Name LIKE N'%Håndsømnål%' OR web2.Name LIKE N'Håndsømnål%' OR art.Name LIKE N'%håndsøm%nål%'))
+                              THEN N'Håndsømnåler'
+                          WHEN web2.Name LIKE N'Broderinål%' OR ((web1.Name LIKE N'Tilbehør' OR web2.Name LIKE N'nål%') AND (art.Name LIKE '%embroider%needle%' OR art.Name LIKE N'%broderinål%') AND NOT art.ArticleID IN (44644))
+                              THEN N'Broderinåler'
                           WHEN web2.Name LIKE N'Quiltenål%' OR ((web1.Name LIKE N'Tilbehør' OR web2.Name LIKE N'nål%') AND (art.Name LIKE '%quilt%needle%' OR art.Name LIKE N'%quiltenål%')) THEN N'Quiltenåler'
                           WHEN web2.Name LIKE N'Applikasjonsnål%' OR ((web1.Name LIKE N'Tilbehør' OR web2.Name LIKE N'nål%') AND (art.Name LIKE N'%applik%nål%' OR art.Name LIKE '%appliq%needle%')) THEN N'Applikasjonsnåler'
 
@@ -133,11 +135,10 @@ WITH Products AS (SELECT
                           WHEN web2.Name LIKE 'Fotpedal' OR (web1.Name LIKE N'symaskintilbehør' AND art.Name LIKE '%Fotpedal%') THEN 'Fotpedal'
                           WHEN web2.Name LIKE N'symaskinnål%' OR web3.Name LIKE N'%Symaskinnåler%' OR (web1.Name LIKE 'symaskin%' AND (art.Name LIKE N'%nåler%' OR web2.Name LIKE N'Nål%')) THEN N'Symaskinnåler'
                           WHEN web2.Name LIKE N'Trykkføtter%' OR art.ArticleID IN (54836, 54847, 54828, 56303, 53593, 53594, 54134) OR (web1.Name LIKE N'symaskintilbehør' AND
-                                                                                                                   (art.Name LIKE '%fot%' OR art.Name LIKE '%Foot%' OR art.Name LIKE '%acufeed%' OR art.Name LIKE N'%transportør%' OR
-                                                                                                                    art.Name LIKE N'%linjal%' OR art.Name LIKE '%guide%' OR art.Name LIKE '%rynkeapparat%'))
-                              THEN N'Trykkføtter'
-                          WHEN web1.Name LIKE N'symaskintilbehør' OR art.ArticleID IN (46439) THEN N'Diverse symaskintilbehør'
-                          END                                                                                                                    AS product_group2,
+                                                                                                                                        (art.Name LIKE '%fot%' OR art.Name LIKE '%Foot%' OR art.Name LIKE '%acufeed%' OR
+                                                                                                                                         art.Name LIKE N'%transportør%' OR art.Name LIKE N'%linjal%' OR art.Name LIKE '%guide%' OR
+                                                                                                                                         art.Name LIKE '%rynkeapparat%')) THEN N'Trykkføtter'
+                          WHEN web1.Name LIKE N'symaskintilbehør' OR art.ArticleID IN (46439) THEN N'Diverse symaskintilbehør' END                                                    AS product_group2,
 
                       -- Product group 3
                       CASE
@@ -194,9 +195,7 @@ WITH Products AS (SELECT
                           WHEN web1.Name LIKE N'symaskintilbehør' AND (web3.Name LIKE 'Spolehold%' OR art.Name LIKE '%spoleholder%') THEN N'Spoleholder'
                           WHEN web1.Name LIKE N'symaskintilbehør' AND (web3.Name LIKE 'Programvare%' OR art.Name LIKE '%brother%pe%design%') THEN 'Programvare'
                           WHEN web1.Name LIKE N'symaskintilbehør' AND (web3.Name LIKE 'Oppgradering%' OR art.Name LIKE '%oppgradering%') THEN 'Oppgraderingssett'
-                          WHEN web1.Name LIKE N'symaskintilbehør' AND (web3.Name LIKE 'Utstyr%boks%' OR art.Name LIKE N'%boks%') THEN N'Utstyrsboks'
-
-                          END                                                                                                                    AS product_group3,
+                          WHEN web1.Name LIKE N'symaskintilbehør' AND (web3.Name LIKE 'Utstyr%boks%' OR art.Name LIKE N'%boks%') THEN N'Utstyrsboks' END                              AS product_group3,
 
                       -- Product color
                       CASE
@@ -224,13 +223,15 @@ WITH Products AS (SELECT
                       CASE
                           -- Fixme: Add from Producer/brand below?
                           WHEN prl.Name IS NOT NULL THEN prl.Name
-                          Else 'Andre'
-                          END AS 'designer',
+                          Else 'Andre' END                                                                                                                                            AS 'designer',
+
+                      -- Supplier / Leverandør
+                      CASE WHEN sup.SupplierID IN (1, 3) THEN sup.Name END                                                                                                            AS 'supplier',
 
                       -- Producer / Brand
                       CASE
 
-                          WHEN art.Name LIKE '%janome%' OR art.Name LIKE '%jabome%' OR art.Name Like '%Janbome%' OR art.Name LIKE '%Jasbome%' THEN 'Janome'
+                          WHEN art.Name LIKE '%janome%' OR art.Name LIKE '%jabome%' OR art.Name LIKE '%Janbome%' OR art.Name LIKE '%Jasbome%' THEN 'Janome'
                           WHEN art.Name LIKE '%baby%lock%' OR web2.Name LIKE 'baby%lock%' THEN 'Baby Lock'
                           WHEN art.Name LIKE '%brother%' THEN 'Brother'
                           WHEN art.Name LIKE '%prym%' THEN 'Prym'
@@ -331,8 +332,7 @@ WITH Products AS (SELECT
                           WHEN art.Name LIKE '%marcus%' AND art.Name LIKE '%fabrics%' THEN 'Marcus Brothers Fabrics'
                           WHEN art.Name LIKE '%Zen Chic%' THEN 'Zen Chic'
                           WHEN art.Name LIKE N'%Fæbrik%' THEN N'Fæbrik'
-                          Else 'Andre'
-                          END                                                                                                           AS vendor,
+                          Else 'Andre' END                                                                                                                                            AS brand,
 
                       CASE WHEN CAST(CURRENT_TIMESTAMP - art.LastUpdate AS INT) < 120 AND (art.ArticleID > (SELECT MAX(ArticleID) FROM Articles) - 500) THEN 'Nyhet' END              AS new_tag
 
@@ -347,12 +347,12 @@ WITH Products AS (SELECT
                            LEFT JOIN Received rec ON rec.aid = art.ArticleID AND (rec.C > 0 OR art.Picture IS NOT NULL)
                            LEFT JOIN Components com on art.ArticleID = com.ArticleID
                            LEFT JOIN ProductLines prl ON prl.ProductLineID = art.ProductLineID
-                  WHERE art.Status = 0 AND ((art.VisibleOnWeb = 1 AND art.Picture IS NOT NULL) OR (art.Name LIKE '%Brother%' OR art.Name LIKE '%baby%lock%' OR art.Name LIKE '%Janome%' OR art.Name LIKE '%organ%'))
-    )
+                  WHERE art.Status = 0
+                    AND ((art.VisibleOnWeb = 1 AND art.Picture IS NOT NULL) OR (art.Name LIKE '%Brother%' OR art.Name LIKE '%baby%lock%' OR art.Name LIKE '%Janome%' OR art.Name LIKE '%organ%')))
 SELECT pro.sku,
        source_id,
        source_updated,
-       TRIM(title) as title,
+       TRIM(title)                                                                                                                                                                                                          as title,
        CASE WHEN price_unit LIKE 'meter' THEN ROUND(CAST(price AS FLOAT) / 10.0, 1) WHEN price IS NULL THEN 0 ELSE price END                                                                                                AS price,
        IIF(price_unit LIKE 'meter%', 'desimeter', ISNULL(price_unit, 'stk'))                                                                                                                                                AS price_unit,
        IIF(NOT available > 0 OR available IS NULL, 0, available)                                                                                                                                                            AS available,
@@ -362,21 +362,29 @@ SELECT pro.sku,
        product_group1,
        product_group2,
        product_group3,
-       IIF(product_category LIKE 'stoff%', product_group2, NULL) AS fabric_material,
-       IIF(product_category LIKE 'stoff%', product_group3, NULL) AS fabric_type,
-       IIF(product_category LIKE 'stoff%', product_color, NULL) AS product_color,
-       IIF(product_category LIKE N'%mønster%', product_group3, NULL) AS pattern_type,
-       vendor,
+       IIF(product_category LIKE 'stoff%', product_group2, NULL)                                                                                                                                                            AS fabric_material,
+       IIF(product_category LIKE 'stoff%', product_group3, NULL)                                                                                                                                                            AS fabric_type,
+       IIF(product_category LIKE 'stoff%', product_color, NULL)                                                                                                                                                             AS product_color,
+       IIF(product_category LIKE N'%mønster%', product_group3, NULL)                                                                                                                                                        AS pattern_type,
+       supplier, -- Supplier / Leverandør (Amendo)
+       brand,    -- Brand / Produsent (Amendo)
+       vat_rate                                                                                                                                                                                                              AS vat_rate,
+       CASE
+           WHEN price_unit LIKE 'meter' THEN ROUND(CAST(purchase_price AS FLOAT) / 10.0, 1)
+           WHEN purchase_price IS NULL THEN 0
+           ELSE purchase_price END AS cost_price,
+       sku                                                                                                                                                                                                                  AS barcode,
+       CASE WHEN price_unit LIKE 'Meter' THEN 11 WHEN price_unit LIKE 'Stk' THEN 1 WHEN price_unit LIKE 'PK' THEN 2 ELSE 1 END                                                                                              AS amendo_price_unit_id,
+
        designer,
        hide_when_empty,
        CASE WHEN discount_start < CURRENT_TIMESTAMP AND CURRENT_TIMESTAMP < discount_end AND discounted_price > 0 THEN IIF(price_unit LIKE 'meter', ROUND(CAST(discounted_price AS FLOAT) / 10.0, 1), discounted_price) END AS discounted_price,
-       CONCAT(product_category, ',', product_group1, ',', product_group2, ',', product_group3, ',', product_color, ',', vendor, ',', designer, ',', new_tag, ',', IIF(price_unit LIKE 'meter%', 'metervare', 'stykkvare'))                                                                AS tags
+       CONCAT(product_category, ',', product_group1, ',', product_group2, ',', product_group3, ',', product_color, ',', brand, ',', designer, ',', new_tag, ',', IIF(price_unit LIKE 'meter%', 'metervare', 'stykkvare'))   AS tags
 
 FROM Products pro
-WHERE
-    source_id NOT IN (45413, 49352, 51701, 53655)
-    AND NOT (price < 10 AND available <= 0)
-    AND NOT (vendor LIKE 'Brother' AND available <= 0)
+WHERE source_id NOT IN (45413, 49352, 51701, 53655)
+  AND NOT (price < 10 AND available <= 0)
+  AND NOT (brand LIKE 'Brother' AND available <= 0)
 
 ORDER BY source_id
 ;

@@ -10,4 +10,5 @@ from .products_order import *  # noqa
 from .report import *  # noqa
 from .stock import *  # noqa
 from .supplier import *  # noqa
+from .variant_group import *  # noqa
 from .vat import *  # noqa

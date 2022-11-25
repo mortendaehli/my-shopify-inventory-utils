@@ -3,6 +3,7 @@ from io import BytesIO
 from typing import Dict, List, Union
 from urllib.error import HTTPError
 
+import numpy as np
 import shopify
 from PIL import Image
 from pyactiveresource.connection import ClientError, ServerError
@@ -163,7 +164,7 @@ def update_product_metafield(
     metafields_keys = [field.attributes["key"] for field in metafields]
     for metafield in metafields:
         if metafield.attributes["key"] in data.keys():
-            metafield.value = data[metafield.attributes["key"]]
+            metafield.value = str(data[metafield.attributes["key"]])
             metafield.save()
         elif delete_missing:
             delete_metafield(metafield=metafield)
@@ -182,9 +183,14 @@ def generate_product_metafields(
         if isinstance(value, str):
             dtype = dto.types.ShopifyType.single_line_text_field
             value_type = dto.types.ShopifyValueType.string
-        elif isinstance(value, int):
+        elif isinstance(value, (np.int64, int)):
+            value = int(value)
             dtype = dto.types.ShopifyType.number_integer
             value_type = dto.types.ShopifyValueType.integer
+        elif isinstance(value, (np.float64, float)):
+            value = float(value)
+            dtype = dto.types.ShopifyType.number_decimal
+            value_type = dto.types.ShopifyValueType.string
         else:
             raise NotImplementedError(f"Datatype {type(value)} has not been implemented for Metafields")
         metafields.append(
@@ -206,9 +212,14 @@ def generate_product_metafield(key: str, value: Union[str, int, float], product_
     if isinstance(value, str):
         dtype = dto.types.ShopifyType.single_line_text_field
         value_type = dto.types.ShopifyValueType.string
-    elif isinstance(value, int):
+    elif isinstance(value, (np.int64, int)):
+        value = int(value)
         dtype = dto.types.ShopifyType.number_integer
         value_type = dto.types.ShopifyValueType.integer
+    elif isinstance(value, (np.float64, float)):
+        value = float(value)
+        dtype = dto.types.ShopifyType.number_decimal
+        value_type = dto.types.ShopifyValueType.string
     else:
         raise NotImplementedError(f"Datatype {type(value)} has not been implemented for Metafields")
     return dto.shopify.Metafield(

@@ -7,9 +7,16 @@ from pydantic import BaseModel
 from myshopify.dto.amendo.base import BaseEntity, BaseResponse
 
 
-class _Category(BaseModel):
-    id: str
-    name: str
+class ProductCategory(BaseModel):
+    id: int
+    name: Optional[str]
+
+
+class ProductDepartment(BaseEntity):
+    departmentId: int
+    stockQuantity: Optional[float]
+    incPrice: Optional[float]
+    takeawayIncPrice: Optional[float]
 
 
 class Product(BaseEntity):
@@ -18,9 +25,10 @@ class Product(BaseEntity):
     productNumber: Optional[str]
     barcode: Optional[str]
     description: Optional[str]
+    departmentId: Optional[int]
     brandId: Optional[int]
     brandName: Optional[str]
-    vatRateId: Optional[int]
+    vatRateId: Optional[int]  # Does not seem possible to set by ID?!
     vatRatePercent: Optional[float]
     takeawayVatRateId: Optional[int]
     takeawayVatRatePercent: Optional[float]
@@ -38,9 +46,12 @@ class Product(BaseEntity):
     printOnBong: Optional[bool]
     productUnitId: Optional[int]
     categoryId: Optional[int]
-    category: Optional[_Category]
+    category: Optional[ProductCategory]
+    supplierId: Optional[int]
+    supplierName: Optional[str]
     variants: Optional[List[Any]]
     images: Optional[List[Any]]
+    departments: Optional[List[ProductDepartment]]
 
 
 class ProductVariantAttribute(BaseModel):
@@ -50,13 +61,6 @@ class ProductVariantAttribute(BaseModel):
     variant_value: str
 
 
-class ProductVariantDepartment(BaseEntity):
-    departmentId: int
-    stockQuantity: float
-    incPrice: float
-    takeawayIncPrice: float
-
-
 class ProductVariant(BaseEntity):
     parentId: int
     productName: Optional[str]
@@ -64,7 +68,7 @@ class ProductVariant(BaseEntity):
     barcode: Optional[str]
     showOnWeb: Optional[bool]
     attributes: Optional[List[Union[ProductVariantAttribute, dict]]]
-    departments: Optional[List[ProductVariantDepartment]]
+    departments: Optional[List[ProductDepartment]]
 
 
 class ProductListResponse(BaseResponse):
@@ -92,7 +96,7 @@ class ProductVariantPostResponseData(BaseResponse):
 
 
 class ProductPostResponse(BaseResponse):
-    data: List[ProductPostResponseData]
+    data: Optional[List[ProductPostResponseData]]
 
 
 class ProductVariantPostResponse(BaseResponse):
@@ -100,3 +104,7 @@ class ProductVariantPostResponse(BaseResponse):
     validationMessages: List[Any]
     totalAffected: Optional[int]
     totalFailedVariants: Optional[int]
+
+
+class ProductViewDetailsResponse(BaseResponse):
+    data: Product

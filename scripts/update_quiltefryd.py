@@ -64,7 +64,6 @@ class Settings(BaseSettings):
 def _get_metafield_data(row: pd.Series) -> Dict[str, Union[str, int]]:
     data = {
         "price_unit": row["price_unit"],
-        "minimum_order_quantity": 3 if row["price_unit"] == "desimeter" else 0,
         "product_category": None if not row["product_category"] else row["product_category"],
         "product_group1": None if not row["product_group1"] else row["product_group1"],
         "product_group2": None if not row["product_group2"] else row["product_group2"],
@@ -73,8 +72,12 @@ def _get_metafield_data(row: pd.Series) -> Dict[str, Union[str, int]]:
         "fabric_material": None if not row["fabric_material"] else row["fabric_material"],
         "fabric_type": None if not row["fabric_type"] else row["fabric_type"],
         "pattern_type": None if not row["pattern_type"] else row["pattern_type"],  # Fixme: Add to filtering
-        "vendor": None if not row["vendor"] else row["vendor"],
+        "brand": None if not row["brand"] else row["brand"],
+        "supplier": None if not row["supplier"] else row["supplier"],
         "designer": None if not row["designer"] else row["designer"],
+        "amendo_price_unit_id": None if not row["amendo_price_unit_id"] else row["amendo_price_unit_id"],
+        "cost_price": None if not row["cost_price"] else row["cost_price"],
+        "vat_rate": None if not row["vat_rate"] else row["vat_rate"],
     }
     return {k: v for (k, v) in data.items() if v is not None}
 
@@ -134,7 +137,7 @@ def main(settings: Settings, input_path: Path) -> None:
                 id=product.id,
                 product_type=product_row["product_category"],
                 tags=product_row["tags"].strip(","),
-                vendor=product_row["vendor"],
+                vendor=product_row["brand"],
             )
             update_product(product_update_dto=product_dto, shopify_product=product)
 
@@ -173,6 +176,7 @@ def main(settings: Settings, input_path: Path) -> None:
                         price=price,
                         compare_at_price=compare_at_price,
                         inventory_policy=inventory_policy,
+                        barcode=product_row["barcode"],
                     )
                     update_variant(variant_update_dto=variant_dto, shopify_variant=variant)
 
@@ -199,7 +203,7 @@ def main(settings: Settings, input_path: Path) -> None:
                 product_type=product_row["product_category"],
                 status=settings.new_product_status,
                 tags=product_row["tags"].strip(","),
-                vendor=product_row["vendor"],
+                vendor=product_row["brand"],
             )
 
             product = create_product(product_dto=new_product)
@@ -219,6 +223,7 @@ def main(settings: Settings, input_path: Path) -> None:
                 inventory_management=ShopifyInventoryManagement.SHOPIFY,
                 fulfillment_service=ShopifyFulfillmentService.MANUAL,
                 position=1,
+                barcode=product_row["barcode"],
             )
             variant = create_variant(variant_dto=new_variant)
 
