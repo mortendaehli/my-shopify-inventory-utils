@@ -5,8 +5,8 @@ WITH Products AS (SELECT
                       art.Name                                                                                                                                                        AS title,
 
                       -- ProductVariant
-                      art.ArticleNo                                                                                                                                                   AS sku,
-                      art.ArticleID                                                                                                                                                   AS source_id,
+                      art.ArticleID                                                                                                                                                   AS sku,
+                      art.ArticleNo AS barcode,
                       art.LastUpdate                                                                                                                                                  AS source_updated,
                       art.PurchasePrice                                                                                                                                               AS purchase_price,
                       IIF(grp.MainGroupID = 10, 0, 25)                                                                                                                                AS vat_rate,
@@ -349,9 +349,8 @@ WITH Products AS (SELECT
                            LEFT JOIN ProductLines prl ON prl.ProductLineID = art.ProductLineID
                   WHERE art.Status = 0
                     AND ((art.VisibleOnWeb = 1 AND art.Picture IS NOT NULL) OR (art.Name LIKE '%Brother%' OR art.Name LIKE '%baby%lock%' OR art.Name LIKE '%Janome%' OR art.Name LIKE '%organ%')))
-SELECT pro.sku,
-       source_id,
-       source_updated,
+SELECT sku,
+       barcode,
        TRIM(title)                                                                                                                                                                                                          as title,
        CASE WHEN price_unit LIKE 'meter' THEN ROUND(CAST(price AS FLOAT) / 10.0, 1) WHEN price IS NULL THEN 0 ELSE price END                                                                                                AS price,
        IIF(price_unit LIKE 'meter%', 'desimeter', ISNULL(price_unit, 'stk'))                                                                                                                                                AS price_unit,
@@ -373,18 +372,18 @@ SELECT pro.sku,
            WHEN price_unit LIKE 'meter' THEN ROUND(CAST(purchase_price AS FLOAT) / 10.0, 1)
            WHEN purchase_price IS NULL THEN 0
            ELSE purchase_price END AS cost_price,
-       sku                                                                                                                                                                                                                  AS barcode,
        CASE WHEN price_unit LIKE 'Meter' THEN 11 WHEN price_unit LIKE 'Stk' THEN 1 WHEN price_unit LIKE 'PK' THEN 2 ELSE 1 END                                                                                              AS amendo_price_unit_id,
 
        designer,
        hide_when_empty,
        CASE WHEN discount_start < CURRENT_TIMESTAMP AND CURRENT_TIMESTAMP < discount_end AND discounted_price > 0 THEN IIF(price_unit LIKE 'meter', ROUND(CAST(discounted_price AS FLOAT) / 10.0, 1), discounted_price) END AS discounted_price,
-       CONCAT(product_category, ',', product_group1, ',', product_group2, ',', product_group3, ',', product_color, ',', brand, ',', designer, ',', new_tag, ',', IIF(price_unit LIKE 'meter%', 'metervare', 'stykkvare'))   AS tags
+       CONCAT(product_category, ',', product_group1, ',', product_group2, ',', product_group3, ',', product_color, ',', brand, ',', designer, ',', new_tag, ',', IIF(price_unit LIKE 'meter%', 'metervare', 'stykkvare'))   AS tags,
+       source_updated
 
 FROM Products pro
-WHERE source_id NOT IN (45413, 49352, 51701, 53655)
+WHERE sku NOT IN (45413, 49352, 51701, 53655)
   AND NOT (price < 10 AND available <= 0)
   AND NOT (brand LIKE 'Brother' AND available <= 0)
 
-ORDER BY source_id
+ORDER BY sku
 ;

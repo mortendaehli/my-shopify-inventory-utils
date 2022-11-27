@@ -10,6 +10,7 @@ from pydantic import BaseSettings
 from myshopify import dto
 from myshopify.api.amendo import AmendoAPIClient
 from myshopify.config import config
+from myshopify.dto.amendo import ProductDepartment
 
 ssl._create_default_https_context = ssl._create_unverified_context
 
@@ -89,70 +90,90 @@ class AmendoProductMigrator:
         self.amendo_product_suppliers = self.get_amendo_product_suppliers()
         return supplier_data.data[0].supplierData
 
-    def get_metafield_by_name(self, product: shopify.Product, field_name: str) -> Optional[Union[float, int, str]]:
-        for metafield in product.metafields():
+    def get_metafield_by_name(self, metafields, field_name: str) -> Optional[Union[float, int, str]]:
+        for metafield in metafields:
             if metafield.attributes.get("key") == field_name:
                 return metafield.attributes.get("value")
         return None
 
     def run(self):
+
+        # all_amendo_products = self.amendo.product_list_all(dto.amendo.ProductFilter())
+        # r3 = self.amendo.product_view_details(dto.amendo.ProductIdPathParams(productId=3))
+        logger.info("Starting product sync.")
+
         # products = get_all_shopify_resources(shopify.Product)
         # variants = get_all_shopify_resources(shopify.Variant)
-        for product in [shopify.Product.find(7616107315434)]:
+        for product in [shopify.Product.find(7616353435882)]:
             logger.info(f"Updating product {product.attributes['id']}: {product.attributes['title']}")
-            if len(product.attributes["variants"]) == 1:
-                shopify_supplier = self.get_metafield_by_name(product=product, field_name="supplier")
-                shopify_brand = product.attributes["vendor"]
-                shopify_category = product.attributes["product_type"]
-                # shopify_price_unit = self.get_metafield_by_name(product=product, field_name="price_unit")
-                # shopify_cost_price = self.get_metafield_by_name(product=product, field_name="cost_price")
-                # shopify_vat_percent = self.get_metafield_by_name(product=product, field_name="vat_percent")
-                variant = product.attributes["variants"][0]
-                brand = self.get_or_create_brand_by_name(brand_name=shopify_brand)  # Vendor in Shopify
-                supplier = (
-                    self.get_or_create_supplier_by_name(supplier_name=shopify_supplier) if shopify_supplier else None
-                )
-                category = self.get_or_create_category_by_name(category_name=shopify_category)
-                amendo_product = dto.amendo.Product(  # noqa
-                    productId=product.attributes["id"],
-                    productName=product.attributes["title"],
-                    productNumber=variant.attributes["sku"],
-                    barcode=None,  # Fixme: Get from metadata
-                    description=product.attributes["body_html"],
-                    departmentId=self.amendo_department.departmentId,
-                    brandId=brand.brandId,
-                    categoryId=category.categoryId,
-                    supplierId=supplier.supplierId,
-                    productUnitId=None,  # Fixme: Get from metadata
-                    vatRateId=None,
-                    vatRatePercent=None,  # Fixme: Get from metadata
-                    costPrice=None,  # Fixme: Get from metadata
-                    priceIncVat=variant.attributes["price"],
-                    stockControl=True,
-                    showOnWeb=True,
-                    images=None,  # Fixme: figure out what to do here... can we use images_url?
-                    isTakeaway=False,
-                    hasVariant=False,
-                    isCombo=False,
-                    hasConnected=None,
-                    childProductsOnReceipt=None,
-                    isOpenPrice=None,  # ??
-                    printOnBong=None,
-                    variants=None,
-                )
-            else:
-                for variant in product.attributes.variants:
-                    logger.info(f"Updating product variant {variant.attributes.id}: {variant.attributes.title}")
-                    # amendo_variant = dto.amendo.ProductVariant(
-                    #     parentId=...,
-                    #     productName=...,
-                    #     productNumber=...,
-                    #     barcode=...,
-                    #     showOnWeb=...,
-                    #     attributes=...,
-                    #     departments=...,
-                    # )
-                raise NotImplementedError("This has not been implemented yet.")
+            if product.attributes.get("status") == dto.types.ShopifyProductStatus.ACTIVE:
+                if len(product.attributes["variants"]) == 1:
+                    shopify_metafields = product.metafields()
+                    shopify_supplier = self.get_metafield_by_name(metafields=shopify_metafields, field_name="supplier")
+                    shopify_brand = product.attributes["vendor"]
+                    shopify_category = product.attributes["product_type"]
+                    # shopify_price_unit = self.get_metafield_by_name(metafields=shopify_metafields, field_name="price_unit")
+                    amendo_price_unit_id = self.get_metafield_by_name(
+                        metafields=shopify_metafields, field_name="amendo_price_unit_id"
+                    )
+                    shopify_cost_price = self.get_metafield_by_name(
+                        metafields=shopify_metafields, field_name="cost_price"
+                    )
+                    shopify_vat_percent = self.get_metafield_by_name(
+                        metafields=shopify_metafields, field_name="vat_rate"
+                    )
+                    variant = product.attributes["variants"][0]
+                    barcode = variant.attributes.get("barcode")
+                    brand = self.get_or_create_brand_by_name(brand_name=shopify_brand)  # Vendor in Shopify
+                    supplier = (
+                        self.get_or_create_supplier_by_name(supplier_name=shopify_supplier)
+                        if shopify_supplier
+                        else None
+                    )
+                    category = self.get_or_create_category_by_name(category_name=shopify_category)
+                    amendo_product = dto.amendo.Product(
+                        # productId=4,
+                        productName=product.attributes["title"],
+                        # productNumber=variant.attributes["sku"],
+                        barcode=barcode,
+                        description=product.attributes["body_html"],
+                        departmentId=self.amendo_department.departmentId,
+                        brandId=brand.brandId,
+                        categoryId=category.categoryId,
+                        supplierId=supplier.supplierId,
+                        productUnitId=amendo_price_unit_id,
+                        vatRatePercent=shopify_vat_percent,
+                        costPrice=shopify_cost_price,
+                        priceIncVat=variant.attributes["price"],
+                        stockControl=True,
+                        showOnWeb=True,
+                        images=None,  # Fixme: figure out what to do here... can we use images_url?
+                        # isTakeaway=False,
+                        # hasVariant=False,
+                        isCombo=False,
+                        # hasConnected=None,
+                        # childProductsOnReceipt=None,
+                        # isOpenPrice=None,  # ??
+                        # printOnBong=None,
+                        # variants=None,
+                    )
+                    response = self.amendo.product_create_or_update(  # noqa
+                        body=dto.amendo.ProductCreateOrUpdateRequestBody(data=[amendo_product])
+                    )
+
+                    for variant in product.attributes.variants:
+                        logger.info(f"Updating product variant {variant.attributes.id}: {variant.attributes.title}")
+                        amendo_variant = dto.amendo.ProductVariant(  # noqa
+                            parentId=variant.attributes.get("id"),
+                            productName=product.attributes["title"],
+                            productNumber=variant.attributes["sku"],
+                            barcode=barcode,
+                            showOnWeb=True,
+                            attributes=None,
+                            departments=[ProductDepartment(**self.amendo_department.__dict__)],
+                        )
+                    else:
+                        raise NotImplementedError("This has not been implemented yet.")
 
 
 if __name__ == "__main__":
