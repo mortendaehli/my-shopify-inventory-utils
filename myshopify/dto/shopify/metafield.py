@@ -4,7 +4,7 @@ from typing import Optional, Union
 import shopify
 from pydantic import BaseModel
 
-from myshopify.dto.types import ShopifyType, ShopifyValueType
+from myshopify.dto.types import ShopifyType
 
 
 class Metafield(BaseModel):
@@ -22,7 +22,6 @@ class Metafield(BaseModel):
     namespace: str
     value: Union[int, float, str]
     type: ShopifyType
-    value_type: ShopifyValueType
 
     def to_shopify_object(self, existing_object: Optional[shopify.Metafield] = None) -> shopify.Metafield:
         if existing_object:

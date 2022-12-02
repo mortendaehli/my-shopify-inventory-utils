@@ -51,13 +51,12 @@ class Settings(BaseSettings):
     delete_all: bool = False
     delete_old_products: bool = False
     delete_old_metadata: bool = False
-    add_products: bool = False
     add_metadata: bool = True
     update_metadata: bool = True
     shopify_key: str = config.MINSYMASKIN_SHOPIFY_KEY
     shopify_password: str = config.MINSYMASKIN_SHOPIFY_PWD
     shopify_shop_name: str = config.MINSYMASKIN_SHOPIFY_NAME
-    new_product_status: ShopifyProductStatus = ShopifyProductStatus.DRAFT
+    new_product_status: ShopifyProductStatus = ShopifyProductStatus.ACTIVE
     allowed_product_categories: Optional[list[str]] = None
     allowed_product_group1: Optional[List[str]] = [
         "Bekledningstoff",
@@ -102,9 +101,9 @@ def _get_metafield_data(row: pd.Series) -> Dict[str, Union[str, int]]:
 
 
 def main(settings: Settings, input_path: Path) -> None:
-
     df = pd.read_pickle(input_path)
-    df = df.groupby("sku").last()
+    df.loc[:, "sku"] = df.loc[:, "sku"].astype(str)
+    df = df.groupby("sku", as_index=False).last()
 
     if settings.allowed_product_categories is not None:
         df = df.loc[df["product_category"].map(lambda x: x in settings.allowed_product_categories)]
@@ -210,62 +209,60 @@ def main(settings: Settings, input_path: Path) -> None:
                     logger.warning(f"Not matched with POS: {product.title} - sku: {variant.sku}")
             sleep(0.5)
 
-        logger.info("Importing products")
-        for _, product_row in df.iterrows():
-            if product_row.sku not in skus:
-                if product_row["available"] < 1 and product_row["hide_when_empty"]:
-                    continue
+    logger.info("Importing products")
+    for _, product_row in df.iterrows():
+        if product_row.sku not in skus:
+            if product_row["available"] < 1 and product_row["hide_when_empty"]:
+                continue
 
-                new_product = dto.shopify.Product(
-                    title=product_row["title"],
-                    body_html=" ".join(["<p>" + x.strip() + "</p>\n" for x in product_row["body_html"].split("\n")]),
-                    product_type=product_row["product_category"],
-                    status=settings.new_product_status,
-                    tags=product_row["tags"].strip(","),
-                    vendor=product_row["brand"],
-                )
+            new_product = dto.shopify.Product(
+                title=product_row["title"],
+                body_html=" ".join(["<p>" + x.strip() + "</p>\n" for x in product_row["body_html"].split("\n")]),
+                product_type=product_row["product_category"],
+                status=settings.new_product_status,
+                tags=product_row["tags"].strip(","),
+                vendor=product_row["brand"],
+            )
 
-                product = create_product(product_dto=new_product)
+            product = create_product(product_dto=new_product)
 
-                price = product_row["discounted_price"] if product_row["discounted_price"] > 0 else product_row["price"]
-                compare_at_price = product_row["price"] if product_row["discounted_price"] > 0 else None
-                inventory_policy = (
-                    ShopifyInventoryPolicy.DENY
-                    if bool(product_row["hide_when_empty"])
-                    else ShopifyInventoryPolicy.CONTINUE
-                )
-                new_variant = dto.shopify.ProductVariant(
-                    id=product.variants[0].id,
-                    product_id=product.id,
-                    sku=str(product_row.name),  # index name = sku
-                    price=price,
-                    compare_at_price=compare_at_price,
-                    inventory_policy=inventory_policy,
-                    inventory_management=ShopifyInventoryManagement.SHOPIFY,
-                    fulfillment_service=ShopifyFulfillmentService.MANUAL,
-                    position=1,
-                    barcode=product_row["barcode"],
-                )
-                variant = create_variant(variant_dto=new_variant)
+            price = product_row["discounted_price"] if product_row["discounted_price"] > 0 else product_row["price"]
+            compare_at_price = product_row["price"] if product_row["discounted_price"] > 0 else None
+            inventory_policy = (
+                ShopifyInventoryPolicy.DENY if bool(product_row["hide_when_empty"]) else ShopifyInventoryPolicy.CONTINUE
+            )
+            new_variant = dto.shopify.ProductVariant(
+                id=product.variants[0].id,
+                product_id=product.id,
+                sku=product_row["sku"],
+                price=price,
+                compare_at_price=compare_at_price,
+                inventory_policy=inventory_policy,
+                inventory_management=ShopifyInventoryManagement.SHOPIFY,
+                fulfillment_service=ShopifyFulfillmentService.MANUAL,
+                position=1,
+                barcode=product_row["barcode"],
+            )
+            variant = create_variant(variant_dto=new_variant)
 
-                inventory_level_update = dto.shopify.InventoryLevel(
-                    inventory_item_id=variant.inventory_item_id,
-                    location_id=location.id,
-                    available=int(np.nan_to_num(product_row["available"], nan=0)),
-                )
+            inventory_level_update = dto.shopify.InventoryLevel(
+                inventory_item_id=variant.inventory_item_id,
+                location_id=location.id,
+                available=int(np.nan_to_num(product_row["available"], nan=0)),
+            )
 
-                _ = add_images_to_product(
-                    product=product,
-                    image_list=[Image.open(io.BytesIO(product_row.images))] if product_row.images else [],
-                )
+            _ = add_images_to_product(
+                product=product,
+                image_list=[Image.open(io.BytesIO(product_row.images))] if product_row.images else [],
+            )
 
-                if settings.add_metadata:
-                    metafields_data = _get_metafield_data(row=product_row)
-                    metafields = generate_product_metafields(data=metafields_data, product_id=product.id)
-                    add_metafields(metafields_dto=metafields, product=product)
+            if settings.add_metadata:
+                metafields_data = _get_metafield_data(row=product_row)
+                metafields = generate_product_metafields(data=metafields_data, product_id=product.id)
+                add_metafields(metafields_dto=metafields, product=product)
 
-                update_inventory(inventory_level_dto=inventory_level_update)
-                sleep(0.5)
+            update_inventory(inventory_level_dto=inventory_level_update)
+            sleep(0.5)
 
     logger.info("Done!")
 

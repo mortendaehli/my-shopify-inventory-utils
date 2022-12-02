@@ -14,7 +14,7 @@ class Category(BaseEntity):
 
 class CategoryListResponse(BaseResponse):
     categories: List[Category]
-    total_count: Optional[int]
+    total_count: int
 
 
 class CategoryCreateBody(BaseModel):

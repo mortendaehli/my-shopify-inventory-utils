@@ -33,12 +33,6 @@ class ShopifyPublishScope(str, Enum):
     GLOBAL = "global"
 
 
-class ShopifyValueType(str, Enum):
-    string = "string"
-    integer = "integer"
-    json_string = "json_string"
-
-
 class ShopifyType(str, Enum):
     single_line_text_field = "single_line_text_field"
     number_integer = "number_integer"

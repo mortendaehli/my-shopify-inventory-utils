@@ -382,7 +382,7 @@ SELECT sku,
 
 FROM Products pro
 WHERE sku NOT IN (45413, 49352, 51701, 53655)
-  AND NOT (price < 10 AND available <= 0)
+  AND ((NOT (price < 10 AND available <= 0)) OR (barcode in ('796402004', '788013009', '102738', '102326', '102324', '185330')))
   AND NOT (brand LIKE 'Brother' AND available <= 0)
 
 ORDER BY sku

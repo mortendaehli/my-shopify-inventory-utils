@@ -73,6 +73,7 @@ class ProductVariant(BaseEntity):
 
 class ProductListResponse(BaseResponse):
     data: List[Product]
+    totalCount: int
 
 
 class ProductCreateOrUpdateRequestBody(BaseModel):

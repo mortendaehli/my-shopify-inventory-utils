@@ -42,7 +42,7 @@ if __name__ == "__main__":
         datelist.append(timestamp)
         filelist.append(col[3])
 
-    timestamp, filename = sorted(list(zip(datelist, filelist)), key=lambda x: x[0])[-1]
+    timestamp, filename = sorted(list(zip(datelist, filelist)), key=lambda x: x[0])[-2]
     print(f"Downloading {filename} timestamp: {timestamp}")
     try:
         ftp.retrbinary("RETR %s" % filename, open(DATA_PATH / filename, "wb").write)
