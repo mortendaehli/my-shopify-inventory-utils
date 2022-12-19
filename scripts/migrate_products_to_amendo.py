@@ -398,6 +398,6 @@ if __name__ == "__main__":
     df_products = migrator.get_products()
     df_products.to_csv("product_export.csv", index=False)
     df_product_stock = migrator.get_product_stock()
-    df_product_stock.to_csv("stock_export.csv", index=False)
+    df_product_stock.to_csv("stock_export.csv", index=False, header=False)
 
     logger.info("Finished!")

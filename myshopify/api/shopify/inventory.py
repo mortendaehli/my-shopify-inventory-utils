@@ -117,7 +117,10 @@ def update_variant(variant_update_dto: dto.shopify.ProductVariant, shopify_varia
 def add_metafields(product: shopify.Product, metafields_dto: List[dto.shopify.Metafield]) -> None:
     logger.info(f"Adding Product Metafields: {product.title}")
     for metafield_dto in metafields_dto:
-        add_metafield(product=product, metafield_dto=metafield_dto)
+        try:
+            add_metafield(product=product, metafield_dto=metafield_dto)
+        except ValueError as e:
+            logger.error(f"Failed to add: {metafield_dto} - {e}")
 
 
 @retry((HTTPError, ServerError, ClientError), tries=10, delay=10)
@@ -170,8 +173,12 @@ def update_product_metafield(
             delete_metafield(metafield=metafield)
     for key, value in data.items():
         if key not in metafields_keys:
-            metafield_dto = generate_product_metafield(key=key, value=value, product_id=product.id)
-            add_metafield(product=product, metafield_dto=metafield_dto)
+            try:
+                metafield_dto = generate_product_metafield(key=key, value=value, product_id=product.id)
+                add_metafield(product=product, metafield_dto=metafield_dto)
+            except ValueError as e:
+                logger.error(f"key: {key} value: {value} error: {e}")
+
     return metafields
 
 
@@ -182,15 +189,12 @@ def generate_product_metafields(
     for key, value in data.items():
         if isinstance(value, str):
             dtype = dto.types.ShopifyType.single_line_text_field
-            value_type = dto.types.ShopifyValueType.string
         elif isinstance(value, (np.int64, int)):
             value = int(value)
             dtype = dto.types.ShopifyType.number_integer
-            value_type = dto.types.ShopifyValueType.integer
         elif isinstance(value, (np.float64, float)):
             value = float(value)
             dtype = dto.types.ShopifyType.number_decimal
-            value_type = dto.types.ShopifyValueType.string
         else:
             raise NotImplementedError(f"Datatype {type(value)} has not been implemented for Metafields")
         metafields.append(
@@ -201,7 +205,6 @@ def generate_product_metafields(
                 namespace="inventory",
                 value=value,
                 type=dtype,
-                value_type=value_type,
             )
         )
 
@@ -211,15 +214,12 @@ def generate_product_metafields(
 def generate_product_metafield(key: str, value: Union[str, int, float], product_id: int) -> dto.shopify.Metafield:
     if isinstance(value, str):
         dtype = dto.types.ShopifyType.single_line_text_field
-        value_type = dto.types.ShopifyValueType.string
     elif isinstance(value, (np.int64, int)):
         value = int(value)
         dtype = dto.types.ShopifyType.number_integer
-        value_type = dto.types.ShopifyValueType.integer
     elif isinstance(value, (np.float64, float)):
         value = float(value)
         dtype = dto.types.ShopifyType.number_decimal
-        value_type = dto.types.ShopifyValueType.string
     else:
         raise NotImplementedError(f"Datatype {type(value)} has not been implemented for Metafields")
     return dto.shopify.Metafield(
@@ -229,5 +229,4 @@ def generate_product_metafield(key: str, value: Union[str, int, float], product_
         namespace="inventory",
         value=value,
         type=dtype,
-        value_type=value_type,
     )
